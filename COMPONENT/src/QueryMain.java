@@ -28,7 +28,7 @@ public class QueryMain {
         Batch.setPageSize(getPageSize(args, in));
 
         SQLQuery sqlquery = getSQLQuery(args[0]);
-        configureBufferManager(sqlquery.getNumJoin(), args, in);
+        configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrderBy(), args, in);
 
         Operator root = getQueryPlan(sqlquery);
         printFinalPlan(root, args, in);
@@ -86,8 +86,8 @@ public class QueryMain {
      * If there are joins then assigns buffers to each join operator while preparing the plan.
      * As buffer manager is not implemented, just input the number of buffers available.
      **/
-    private static void configureBufferManager(int numJoin, String[] args, BufferedReader in) {
-        if (numJoin != 0) {
+    private static void configureBufferManager(int numJoin, int numOrderBy, String[] args, BufferedReader in) {
+        if (numJoin != 0 || numOrderBy != 0) {
             int numBuff = 1000;
             if (args.length < 4) {
                 System.out.println("enter the number of buffers available");
@@ -100,11 +100,14 @@ public class QueryMain {
             } else numBuff = Integer.parseInt(args[3]);
             BufferManager bm = new BufferManager(numBuff, numJoin);
         }
-
         /** Check the number of buffers available is enough or not **/
-        int numBuff = BufferManager.getBuffersPerJoin();
-        if (numJoin > 0 && numBuff < 3) {
+        int numBuffPerJoin = BufferManager.getBuffersPerJoin();
+        int numBuff = BufferManager.getNumBuffers();
+        if (numJoin > 0 && numBuffPerJoin < 3) {
             System.out.println("Minimum 3 buffers are required per join operator ");
+            System.exit(1);
+        } else if (numBuff < 1) {
+            System.out.println("Minimum 1 buffer is required for orderby operator ");
             System.exit(1);
         }
     }
