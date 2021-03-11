@@ -81,7 +81,7 @@ public class SQLQuery {
         isDesc = flag;
     }
 
-    public boolean isDesc() {
+    public boolean getIsDesc() {
         return isDesc;
     }
 

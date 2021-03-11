@@ -76,6 +76,8 @@ public class PlanCost {
             return getStatistics((Project) node);
         } else if (node.getOpType() == OpType.SCAN) {
             return getStatistics((Scan) node);
+        } else if (node.getOpType() == OpType.ORDERBY) {
+            return getStatistics((OrderBy) node);
         }
         System.out.println("operator is not supported");
         isFeasible = false;
@@ -90,6 +92,15 @@ public class PlanCost {
         return calculateCost(node.getBase());
     }
 
+    private long getStatistics(OrderBy node) {
+        // ToDo
+        int numBuffs = node.getBuffers();
+        int numPages = node.getPages();
+        int numPasses = 1 + (int) Math.ceil(Math.log(Math.ceil(numPages / (1.0 * numBuffs))) / Math.log(numPages - 1));
+        cost += 2 * numPages * numPasses;
+
+        return calculateCost(node.getBase());
+    }
     /**
      * Calculates the statistics and cost of join operation
      **/
