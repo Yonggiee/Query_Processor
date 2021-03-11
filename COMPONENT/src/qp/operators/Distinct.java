@@ -34,7 +34,7 @@ public class Distinct extends Operator {
         }
         int tuplesize = base.schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
-        this.sort = new Sort(base, numBuff, batchsize);
+        this.sort = new Sort(base, numBuff, batchsize, true);
         lastSortedFile = this.sort.performSort();
 
         return true;

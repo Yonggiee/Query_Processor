@@ -16,12 +16,12 @@ public class Sort {
     private OrderByComparator comparator;
     private boolean isDistinct = false;
 
-    public Sort(Operator base, int numBuff, int batchsize) {
+    public Sort(Operator base, int numBuff, int batchsize, boolean isDistinct) {
         this.base = base;
         this.numBuff = numBuff;
         this.batchsize = batchsize;
         this.comparator = new OrderByComparator(base.getSchema());
-        this.isDistinct = true;
+        this.isDistinct = isDistinct;
     }
 
     public Sort(Operator base, int numBuff, List<OrderType> orderTypes, int batchsize) {
