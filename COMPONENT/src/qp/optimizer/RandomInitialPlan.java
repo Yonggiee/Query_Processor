@@ -61,6 +61,7 @@ public class RandomInitialPlan {
             createJoinOp();
         }
         createProjectOp();
+        createOrderByOp();
 
         return root;
     }
@@ -195,7 +196,7 @@ public class RandomInitialPlan {
         ArrayList<OrderType> orderTypeList = new ArrayList<>();
         OrderType.Order order = sqlquery.getIsDesc() ? OrderType.Order.DESC : OrderType.Order.ASC;
         for (Attribute a : orderbylist) {
-            OrderType ot = new OrderType(a, order); // default is asc
+            OrderType ot = new OrderType(a, order); 
             orderTypeList.add(ot);
         }
         sqlquery.setOrderByList(orderbylist);
