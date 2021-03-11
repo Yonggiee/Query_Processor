@@ -1,60 +1,40 @@
 package qp.operators;
 
+import qp.optimizer.BufferManager;
+import qp.utils.Attribute;
 import qp.utils.Batch;
+import qp.utils.Condition;
 import qp.utils.Schema;
 import qp.utils.Sort;
 import qp.utils.Tuple;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * The OrderBy operator will order specified attributes and order type (ASC or
- * DESC). This is implemented using external sorting.
- */
-public class OrderBy extends Operator {
+public class Distinct extends Operator {
 
-    private Operator base;
-    private List<OrderType> orderByTypeList;
+    Operator base;
+    int batchsize; // Number of tuples per out batch
+    Batch outbatch; // Buffer page for output
+    private ObjectInputStream lastSortedFile = null;
+    private Sort sort;
+    private boolean endOfSortedFile = false;
     private int numBuff;
 
-    private int batchsize;
-    private ObjectInputStream lastSortedFile = null;
-    private boolean endOfSortedFile = false;
-    private Sort sort;
-
-    public OrderBy(Operator base, List<OrderType> orderTypes, int numBuffers) {
-        super(OpType.ORDERBY);
+    public Distinct(Operator base, int type, int numBuff) {
+        super(type);
         this.base = base;
-        this.orderByTypeList = orderTypes;
-        this.numBuff = numBuffers;
+        this.numBuff = numBuff;
     }
 
-    public Operator getBase() {
-        return base;
-    }
-
-    public void setBase(Operator base) {
-        this.base = base;
-    }
-
-    public int getBuffers() {
-        return numBuff;
-    }
-
-    /**
-     * Opens the OrderBy operator and performs the necessary initialisation, and the
-     * external sorting algorithm for the ordering by specified OrderTypes.
-     * 
-     * @return true if operator is successfully opened and executed.
-     */
     public boolean open() {
         if (!base.open()) {
             return false;
         }
         int tuplesize = base.schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
-        this.sort = new Sort(base, numBuff, orderByTypeList, batchsize);
+        this.sort = new Sort(base, numBuff, batchsize);
         lastSortedFile = this.sort.performSort();
 
         return true;
@@ -87,20 +67,24 @@ public class OrderBy extends Operator {
         }
         return outbatch;
     }
-
+    
     public boolean close() {
         return super.close();
     }
 
-    public Object clone() {
-        Operator clone = (Operator) base.clone();
-        OrderBy cloneOB = new OrderBy(clone, orderByTypeList, numBuff);
-        cloneOB.setSchema((Schema) schema.clone());
-        return cloneOB;
+    public Operator getBase() {
+        return base;
     }
 
-    public int getPages() {
-        return 0;
+    public void setBase(Operator base) {
+        this.base = base;
+    }
+
+    public Object clone() {
+        Operator newBase = (Operator) base.clone();
+        Distinct newdist = new Distinct(newBase, numBuff, optype);
+        newdist.setSchema((Schema) schema.clone());
+        return newdist;
     }
 
 }

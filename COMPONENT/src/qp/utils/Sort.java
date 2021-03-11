@@ -14,6 +14,15 @@ public class Sort {
     private int batchsize;
     private int runNum = 0;
     private OrderByComparator comparator;
+    private boolean isDistinct = false;
+
+    public Sort(Operator base, int numBuff, int batchsize) {
+        this.base = base;
+        this.numBuff = numBuff;
+        this.batchsize = batchsize;
+        this.comparator = new OrderByComparator(base.getSchema());
+        this.isDistinct = true;
+    }
 
     public Sort(Operator base, int numBuff, List<OrderType> orderTypes, int batchsize) {
         this.base = base;
@@ -181,7 +190,10 @@ public class Sort {
         } else {
             boolean inserted = false;
             for (int i = 0; i < tupleList.size(); i++) {
-                if (comparator.compare(tupleList.get(i), toInsert) > 0) {
+                if (isDistinct && comparator.compare(tupleList.get(i), toInsert) == 0) {
+                    inserted = true;
+                    break;
+                } else if (comparator.compare(tupleList.get(i), toInsert) > 0) {
                     tupleList.add(i, toInsert);
                     sortedOrder.add(i, fromWhichSortedRun);
                     inserted = true;
@@ -208,12 +220,16 @@ public class Sort {
             for (int i = 0; i < inbatch.size(); i++) {
                 Tuple tuple = inbatch.get(i);
                 if (added == totalTuplesInBuffs) {
-                    Arrays.sort(tuplesInRun, comparator);
+                    if (isDistinct) {
+                        tuplesInRun = removeDuplicates(tuplesInRun);
+                    } else {
+                        Arrays.sort(tuplesInRun, comparator);
+                    }
                     try {
                         sortedRun = File.createTempFile(runNum + "-temp", null, new File("./"));
                         sortedRun.deleteOnExit();
                         fileWriter = new ObjectOutputStream(new FileOutputStream(sortedRun));
-                        for (int j = 0; j < totalTuplesInBuffs; j++) {
+                        for (int j = 0; j < tuplesInRun.length; j++) {
                             fileWriter.writeObject(tuplesInRun[j]);
                         }
                         fileWriter.writeObject(null);
@@ -233,12 +249,16 @@ public class Sort {
 
         if (added > 0) {
             tuplesInRun = Arrays.copyOfRange(tuplesInRun, 0, added);
-            Arrays.sort(tuplesInRun, comparator);
+            if (isDistinct) {
+                tuplesInRun = removeDuplicates(tuplesInRun);
+            } else {
+                Arrays.sort(tuplesInRun, comparator);
+            }
             try {
                 sortedRun = File.createTempFile(runNum + "-temp", null, new File("./"));
                 sortedRun.deleteOnExit();
                 fileWriter = new ObjectOutputStream(new FileOutputStream(sortedRun));
-                for (int j = 0; j < added; j++) {
+                for (int j = 0; j < tuplesInRun.length; j++) {
                     fileWriter.writeObject(tuplesInRun[j]);
                 }
                 fileWriter.writeObject(null);
@@ -247,6 +267,17 @@ public class Sort {
                 e.printStackTrace();
             }
         }
+    }
+
+    private Tuple[] removeDuplicates(Tuple[] toRemove) {
+        Set<Tuple> sortedAndMerged = new TreeSet<Tuple>(comparator);
+        for (int i = 0; i < toRemove.length; i++) {
+            sortedAndMerged.add(toRemove[i]);
+        }
+
+        Tuple[] output = new Tuple[sortedAndMerged.size()];
+        sortedAndMerged.toArray(output);
+        return output;
     }
 
 }

@@ -61,6 +61,7 @@ public class RandomInitialPlan {
             createJoinOp();
         }
         createProjectOp();
+        createDistinctOp();
         createOrderByOp();
 
         return root;
@@ -201,6 +202,15 @@ public class RandomInitialPlan {
         }
         sqlquery.setOrderByList(orderbylist);
         root = new OrderBy(base, orderTypeList, BufferManager.getNumBuffers());
+        root.setSchema(base.getSchema());
+    }
+
+    public void createDistinctOp() {
+        if (!sqlquery.isDistinct()) {
+            return;
+        }
+        Operator base = root;
+        root = new Distinct(base, OpType.DISTINCT, BufferManager.getNumBuffers());
         root.setSchema(base.getSchema());
     }
 

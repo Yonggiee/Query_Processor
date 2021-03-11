@@ -1,9 +1,12 @@
 package qp.operators;
 
+import qp.operators.OrderType.Order;
 import qp.utils.Attribute;
 import qp.utils.Schema;
 import qp.utils.Tuple;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -13,6 +16,16 @@ import java.util.List;
 public class OrderByComparator implements Comparator<Tuple> {
     private Schema schema;
     private List<OrderType> orderTypeList;
+
+    public OrderByComparator(Schema schema) {
+        this.schema = schema;
+        ArrayList<Attribute> attrList = schema.getAttList();
+        orderTypeList = new ArrayList<>();
+        for (int i = 0; i < attrList.size(); i++) {
+            OrderType ot = new OrderType(attrList.get(i), Order.ASC);
+            orderTypeList.add(ot);
+        }
+    }
 
     public OrderByComparator(Schema schema, List<OrderType> orderTypeList) {
         this.schema = schema;
