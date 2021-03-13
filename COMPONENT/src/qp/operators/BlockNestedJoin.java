@@ -67,7 +67,7 @@ public class BlockNestedJoin extends Join {
      **/
     public boolean open() {
         /** initialise and load Block with up to M-2 buffer pages (1 for S, 1 for output, following textbook)*/
-        // this.populateBlock();
+        this.populateBlock();
 
         /** select number of tuples per batch **/
         int tuplesize = schema.getTupleSize();
@@ -118,11 +118,8 @@ public class BlockNestedJoin extends Join {
             if (!right.close())
                 return false;
         }
-        if (left.open())
-            return true;
-        else
-            return false;
-    }
+        return left.open();
+    }p
 
     /**
      * from input buffers selects the tuples satisfying join condition
@@ -143,6 +140,10 @@ public class BlockNestedJoin extends Join {
                     }
                 } else {
                     leftbatch = leftblock[blockpointer++];
+                    if (leftbatch == null) {
+                        eosl = true;
+                        return outbatch;
+                    }
                 }
                 /** Whenever a new left page came, we have to start the
                  ** scanning of right table
@@ -157,31 +158,33 @@ public class BlockNestedJoin extends Join {
 
             }
             while (eosr == false) {
+                // System.out.println("Im in here");
                 try {
                     if (rcurs == 0 && lcurs == 0) {
                         rightbatch = (Batch) in.readObject();
                     }
-                    for (i = lcurs; i < leftbatch.size(); ++i) {
-                        for (j = rcurs; j < rightbatch.size(); ++j) {
+                    for (i = lcurs; i < leftbatch.size(); i++) {
+                        for (j = rcurs; j < rightbatch.size(); j++) {
                             Tuple lefttuple = leftbatch.get(i);
                             Tuple righttuple = rightbatch.get(j);
                             if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
                                 Tuple outtuple = lefttuple.joinWith(righttuple);
                                 outbatch.add(outtuple);
                                 if (outbatch.isFull()) {
-                                    if (i == leftbatch.size() - 1 && j == rightbatch.size() - 1) {  //case 1
+                                    if (i == leftbatch.size() - 1 && j == rightbatch.size() - 1) {  //case 1: left & right pages complete
                                         lcurs = 0;
                                         rcurs = 0;
-                                    } else if (i != leftbatch.size() - 1 && j == rightbatch.size() - 1) {  //case 2
+                                    } else if (i != leftbatch.size() - 1 && j == rightbatch.size() - 1) {  //case 2: only right complete
                                         lcurs = i + 1;
                                         rcurs = 0;
-                                    } else if (i == leftbatch.size() - 1 && j != rightbatch.size() - 1) {  //case 3
+                                    } else if (i == leftbatch.size() - 1 && j != rightbatch.size() - 1) {  //case 3: only left complete
                                         lcurs = i;
                                         rcurs = j + 1;
-                                    } else {
+                                    } else {                                                                //case 4: both sides not complete
                                         lcurs = i;
-                                        rcurs = j + 1;
+                                        rcurs = j;
                                     }
+                                    // System.out.println("returning outbatch");
                                     return outbatch;
                                 }
                             }
