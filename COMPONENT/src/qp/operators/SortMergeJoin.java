@@ -38,17 +38,16 @@ public class SortMergeJoin extends Join{
     private int leftItr;
     private int rightItr;
 
-    private File bufferedTuplesFile;
-    private ObjectInputStream bufferedTuplesStream = null;
-    private ArrayList<Tuple> bufferedTuples = null;
-    private int bufferItr;
-    private boolean bufferedFileEndReached = true;
+    private ArrayList<Tuple> bufferedTuples;
+    private int bufferedItr;
     private boolean bufferedNoLongerMatched = false;
 
     public SortMergeJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(), jn.getConditionList(), jn.getOpType());
         schema = jn.getSchema();
         numBuff = jn.getNumBuff();
+        jointype = jn.getJoinType();
+        System.out.println("LALALALALA" + schema);
     }
 
     /**
@@ -63,6 +62,7 @@ public class SortMergeJoin extends Join{
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
 
+        bufferedTuples = new ArrayList<>();
         /** find indices attributes of join conditions **/
         leftindex = new ArrayList<>();
         rightindex = new ArrayList<>();
@@ -88,12 +88,6 @@ public class SortMergeJoin extends Join{
         leftSortedFile = this.leftSort.performSort();
         rightSort = new Sort(right, numBuff, rightOrderType, batchsize);
         rightSortedFile = this.rightSort.performSort();
-
-        try {
-            bufferedTuplesFile = File.createTempFile("buffered", null, new File("./"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
         return true;
     }
@@ -130,6 +124,10 @@ public class SortMergeJoin extends Join{
             if (canMerge) {
                 Tuple mergeTuple = left.joinWith(right);
                 outbatch.add(mergeTuple);
+                bufferedTuples.add(right);
+                bufferedItr = bufferedTuples.size() - 1;
+                bufferedNoLongerMatched = false;
+
                 added += 1;
                 rightItr += 1;
                 if (rightItr == rightSideTuples.size()) {
@@ -159,29 +157,22 @@ public class SortMergeJoin extends Join{
     }
 
     private void checkCanAddBufferedTuples(Tuple toAdd, Batch batch) {
-        if (bufferedTuples == null) {
-            bufferedTuples = fillTuple(batchsize, bufferedTuplesStream, 3);
-        }
+        while (batch.size() < batchsize && !bufferedNoLongerMatched) {
+            Tuple currentBuffered = bufferedTuples.get(bufferedItr);
 
-        while (bufferedTuples.size() > 0 ) {
             boolean canMerge = true;
-            Tuple right = bufferedTuples.get(bufferItr);
-            for (int j = 0; j < leftindex.size(); j++) {
-                canMerge = canMerge && toAdd.checkJoin(right, leftindex.get(j), rightindex.get(j));
+            for (int i = 0; i < leftindex.size(); i++) {
+                canMerge = canMerge && toAdd.checkJoin(currentBuffered, leftindex.get(i), rightindex.get(i));
             }
             if (canMerge) {
-                Tuple newTuple = toAdd.joinWith(right);
-                batch.add(newTuple);
+                Tuple mergeTuple = toAdd.joinWith(currentBuffered);
+                batch.add(mergeTuple);
+                bufferedItr -= 1;
+                if (bufferedItr == 0) {
+                    bufferedNoLongerMatched = true;
+                }
             } else {
                 bufferedNoLongerMatched = true;
-                break;
-            }
-            bufferItr += 1;
-            if (bufferItr == bufferedTuples.size() && !bufferedFileEndReached) {
-                bufferedTuples = fillTuple(batchsize, bufferedTuplesStream, 3);
-            } 
-            if (batch.size() == batchsize) {
-                break;
             }
         }
     }
@@ -201,8 +192,6 @@ public class SortMergeJoin extends Join{
                     leftSortedFileEndReached = true;
                 } else if (type == 2) {
                     rightSortedFileEndReached = true;
-                } else if (type == 3) {
-                    bufferedFileEndReached = true;
                 }
                 break;
             }
@@ -211,4 +200,9 @@ public class SortMergeJoin extends Join{
         return rightTuples;
     }
     
+    public boolean close() {
+        left.close();
+        right.close();
+        return super.close();
+    }
 }
