@@ -35,7 +35,7 @@ public class GroupBy extends Operator {
         this.sort = new Sort(base, numBuff, batchSize, true);
         lastSortedFile = this.sort.performSort();
         //
-        for (int i = 0; i < attrs.size(); i++) {
+        for (int i = 0; i < attributes.size(); i++) {
             Attribute attribute = (Attribute) attributes.get(i);
             attributesIndex.add(schema.indexOf(attribute));
         }
@@ -93,7 +93,7 @@ public class GroupBy extends Operator {
     public Object clone() {
         Operator newBase = (Operator) base.clone();
         ArrayList<Attribute> newAttrs = new ArrayList<>();
-        for (int i = 0; i < attrs.size(); i++) {
+        for (int i = 0; i < attributes.size(); i++) {
             Attribute attribute = (Attribute) ((Attribute) attributes.get(i)).clone();
             newAttrs.add(attribute);
         }
