@@ -4,6 +4,10 @@
 
 package qp.utils;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+
 public class Condition {
 
     public static final int LESSTHAN = 1;
@@ -29,6 +33,15 @@ public class Condition {
 
     public Condition(int type) {
         exprtype = type;
+    }
+
+    public static ArrayList<Condition> sortConditionList(ArrayList<Condition> toSort) {
+        Condition[] conditions = (Condition[]) toSort.toArray();
+        Arrays.sort(conditions, new ConditionComparator());
+
+        ArrayList<Condition> sorted = new ArrayList<>();
+        Collections.addAll(sorted, conditions);
+        return sorted;
     }
 
     public Condition getFlippedCondition() {
