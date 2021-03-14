@@ -45,3 +45,4 @@ COMPONENT/testcases/FORMAT.txt
 COMPONENT/testcases/makefile
 COMPONENT/testcases/query.out
 COMPONENT/testcases/queryin.sql
+COMPONENT/src/qp/operators/BlockNestedJoin.java@array
