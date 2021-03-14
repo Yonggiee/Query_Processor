@@ -57,7 +57,7 @@ public class GroupBy extends Operator {
                     break;
                 }
                 Tuple outtuple = (Tuple) inStream;
-                if (prevtuple == null || !isEqual(prevtuple, outtuple)){
+                if (prevtuple == null || !isSameTuple(prevtuple, outtuple)){
                     outbatch.add(outtuple);
                     prevtuple = outtuple;
                 }
@@ -66,6 +66,15 @@ public class GroupBy extends Operator {
             }
         }
         return outbatch;
+    }
+
+    private boolean isSameTuple(Tuple tuple1, Tuple tuple2){
+        for (int i=0; i < attributesIndex.size(); i++) {
+            if (Tuple.compareTuples(tuple1, tuple2, attributesIndex.get(i)) != 0) {
+                return false;
+            }
+        }
+        return true; 
     }
     
     public boolean close() {
