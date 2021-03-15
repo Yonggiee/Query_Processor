@@ -1,24 +1,17 @@
 package qp.operators;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import qp.utils.Attribute;
 import qp.utils.Batch;
 import qp.utils.Condition;
-import qp.utils.Schema;
 import qp.utils.Sort;
 import qp.utils.Tuple;
 
 public class SortMergeJoin extends Join{
-    private Schema schema;
-    private int numBuff;
     private int batchsize;
 	private ArrayList<Integer> leftindex;
     private ArrayList<Integer> rightindex;
@@ -33,21 +26,20 @@ public class SortMergeJoin extends Join{
     private ObjectInputStream rightSortedFile = null;
     private boolean rightSortedFileEndReached = false;
 
-    private ArrayList<Tuple> rightSideTuples;
-    private ArrayList<Tuple> leftSideTuples;
+    private ArrayList<Tuple> rightSideTuples = null;
+    private ArrayList<Tuple> leftSideTuples = null;
     private int leftItr;
     private int rightItr;
 
     private ArrayList<Tuple> bufferedTuples;
     private int bufferedItr;
-    private boolean bufferedNoLongerMatched = false;
+    private boolean bufferedNoLongerMatched = true;
 
     public SortMergeJoin(Join jn) {
         super(jn.getLeft(), jn.getRight(), jn.getConditionList(), jn.getOpType());
         schema = jn.getSchema();
         numBuff = jn.getNumBuff();
         jointype = jn.getJoinType();
-        System.out.println("LALALALALA" + schema);
     }
 
     /**
@@ -71,7 +63,6 @@ public class SortMergeJoin extends Join{
         rightOrderType = new ArrayList<OrderType>();
 
         conditionList = Condition.sortConditionList(conditionList);
-
         for (Condition con : conditionList) {
             Attribute leftattr = con.getLhs();
             leftindex.add(left.getSchema().indexOf(leftattr));
@@ -83,12 +74,10 @@ public class SortMergeJoin extends Join{
             OrderType rightOrder = new OrderType(rightattr, OrderType.Order.ASC);
             rightOrderType.add(rightOrder);
         }
-
         leftSort = new Sort(left, numBuff, leftOrderType, batchsize);
         leftSortedFile = this.leftSort.performSort();
         rightSort = new Sort(right, numBuff, rightOrderType, batchsize);
         rightSortedFile = this.rightSort.performSort();
-
         return true;
     }
 
@@ -99,15 +88,14 @@ public class SortMergeJoin extends Join{
 
         if (rightSideTuples == null) {
             rightSideTuples = fillTuple(tuplesPerSide, rightSortedFile, 2);
-            leftItr = 0;
+            rightItr = 0;
         }
         if (leftSideTuples == null) {
             leftSideTuples = fillTuple(tuplesPerSide, leftSortedFile, 1);
-            rightItr = 0;
+            leftItr = 0;
         }
        
-        while (rightSideTuples.size() != 0 && leftSideTuples.size() != 0) {
-            boolean canMerge = true;
+        while (rightSideTuples.size() > 0 && leftSideTuples.size() > 0) {
             Tuple left = leftSideTuples.get(leftItr);
             if (!bufferedNoLongerMatched) {
                 checkCanAddBufferedTuples(left, outbatch);
@@ -116,59 +104,66 @@ public class SortMergeJoin extends Join{
                 }
             }
             Tuple right = rightSideTuples.get(rightItr);
-
-            for (int i = 0; i < leftindex.size(); i++) {
-                canMerge = canMerge && left.checkJoin(right, leftindex.get(i), rightindex.get(i));
-            }
+            boolean canMerge = left.checkJoin(right, leftindex, rightindex);
 
             if (canMerge) {
                 Tuple mergeTuple = left.joinWith(right);
                 outbatch.add(mergeTuple);
-                bufferedTuples.add(right);
-                bufferedItr = bufferedTuples.size() - 1;
-                bufferedNoLongerMatched = false;
-
                 added += 1;
+            }
+
+            if (checkLeftIncrement(left, right) >= 0) {
                 rightItr += 1;
+                bufferedTuples.add(right);
                 if (rightItr == rightSideTuples.size()) {
                     if (!rightSortedFileEndReached) {
                         rightSideTuples = fillTuple(tuplesPerSide, rightSortedFile, 2);
                         rightItr = 0;
                     } else {
+                        rightSideTuples.clear();
                         break;
                     }
                 }
-                if (added == batchsize) {
-                    break;
-                }
             } else {
                 leftItr += 1;
+                bufferedItr = bufferedTuples.size() - 1;
+                if (bufferedItr >= 0) {
+                    bufferedNoLongerMatched = false;
+                }
                 if (leftItr == leftSideTuples.size()) {
                     if (!leftSortedFileEndReached) {
                         leftSideTuples = fillTuple(tuplesPerSide, leftSortedFile, 1);
                         leftItr = 0;
                     } else {
+                        leftSideTuples.clear();
                         break;
                     }
                 }
             }
+
+            if (added == batchsize) {
+                break;
+            }
+        }
+        if (added == 0) {
+            return null;
         }
         return outbatch;
+    }
+
+    private int checkLeftIncrement(Tuple left, Tuple right) {
+        return Tuple.compareTuples(left, right, leftindex, rightindex);
     }
 
     private void checkCanAddBufferedTuples(Tuple toAdd, Batch batch) {
         while (batch.size() < batchsize && !bufferedNoLongerMatched) {
             Tuple currentBuffered = bufferedTuples.get(bufferedItr);
-
-            boolean canMerge = true;
-            for (int i = 0; i < leftindex.size(); i++) {
-                canMerge = canMerge && toAdd.checkJoin(currentBuffered, leftindex.get(i), rightindex.get(i));
-            }
+            boolean canMerge = toAdd.checkJoin(currentBuffered, leftindex, rightindex);
             if (canMerge) {
                 Tuple mergeTuple = toAdd.joinWith(currentBuffered);
                 batch.add(mergeTuple);
                 bufferedItr -= 1;
-                if (bufferedItr == 0) {
+                if (bufferedItr < 0) {
                     bufferedNoLongerMatched = true;
                 }
             } else {
@@ -178,7 +173,7 @@ public class SortMergeJoin extends Join{
     }
 
     private ArrayList<Tuple> fillTuple(int totalTupleSize, ObjectInputStream sortedFile, int type) {
-        ArrayList<Tuple> rightTuples = new ArrayList<>();
+        ArrayList<Tuple> tuples = new ArrayList<>();
 
         for (int i = 0; i < totalTupleSize; i++) {
             Object inStream = null;
@@ -194,10 +189,12 @@ public class SortMergeJoin extends Join{
                     rightSortedFileEndReached = true;
                 }
                 break;
+            } else {
+                Tuple tuple = (Tuple) inStream;
+                tuples.add(tuple);
             }
         }
-
-        return rightTuples;
+        return tuples;
     }
     
     public boolean close() {

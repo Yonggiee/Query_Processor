@@ -36,12 +36,8 @@ public class Condition {
     }
 
     public static ArrayList<Condition> sortConditionList(ArrayList<Condition> toSort) {
-        Condition[] conditions = (Condition[]) toSort.toArray();
-        Arrays.sort(conditions, new ConditionComparator());
-
-        ArrayList<Condition> sorted = new ArrayList<>();
-        Collections.addAll(sorted, conditions);
-        return sorted;
+        Collections.sort(toSort, new ConditionComparator());
+        return toSort;
     }
 
     public Condition getFlippedCondition() {
