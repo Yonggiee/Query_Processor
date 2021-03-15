@@ -111,7 +111,7 @@ public class QueryMain {
         if (numJoin > 0 && numBuffPerJoin < 3) {
             System.out.println("Minimum 3 buffers are required per join operator ");
             System.exit(1);
-        } else if (numBuff < 3) {
+        } else if (numBuff < 3 && numOrderBy > 0) {
             System.out.println("Minimum 3 buffer is required for orderby operator ");
             System.exit(1);
         }
