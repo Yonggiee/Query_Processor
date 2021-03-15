@@ -1,16 +1,11 @@
 package qp.operators;
 
-import qp.optimizer.BufferManager;
-import qp.utils.Attribute;
 import qp.utils.Batch;
-import qp.utils.Condition;
 import qp.utils.Schema;
 import qp.utils.Sort;
 import qp.utils.Tuple;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Distinct extends Operator {
 

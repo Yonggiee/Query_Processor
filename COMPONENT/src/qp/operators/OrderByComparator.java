@@ -5,7 +5,6 @@ import qp.utils.Attribute;
 import qp.utils.Schema;
 import qp.utils.Tuple;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
