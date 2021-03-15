@@ -11,6 +11,9 @@ import qp.utils.Condition;
 import qp.utils.Sort;
 import qp.utils.Tuple;
 
+/**
+ * SortMergeJoin operator will merge two sorted relations given a condition list
+ */
 public class SortMergeJoin extends Join{
     private int batchsize;
 	private ArrayList<Integer> leftindex;
@@ -43,19 +46,16 @@ public class SortMergeJoin extends Join{
     }
 
     /**
-     * During open finds the index of the join attributes * Materializes the right
-     * hand side into a file * Opens the connections
+     * Does the setup operations which include sorting the left and right
      **/
     public boolean open() {
         if (!left.open() || !right.open()) {
             return false;
         }
-        /** select number of tuples per batch **/
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
 
         bufferedTuples = new ArrayList<>();
-        /** find indices attributes of join conditions **/
         leftindex = new ArrayList<>();
         rightindex = new ArrayList<>();
 
@@ -81,6 +81,11 @@ public class SortMergeJoin extends Join{
         return true;
     }
 
+    /**
+     * Outputs batch with merged tuples which satisfy the conditions list
+     * Also backtracks when necessary to ensure correctness for duplicate attribute values
+     * Assume buffered tuples to be able to fit in one buffer for simplicity.
+     **/
     public Batch next() {
         Batch outbatch = new Batch(batchsize);
         int added = 0;
@@ -151,10 +156,18 @@ public class SortMergeJoin extends Join{
         return outbatch;
     }
 
+    /**
+     * Checks if the left tuple has a higher value than the right tuple
+     * according to a list of attributes
+     **/
     private int checkLeftIncrement(Tuple left, Tuple right) {
         return Tuple.compareTuples(left, right, leftindex, rightindex);
     }
 
+    /**
+     * Add into batch buffered tuples by backtracking
+     * Assume buffered tuple list to be able to fit in one buffer for simplicity
+     **/
     private void checkCanAddBufferedTuples(Tuple toAdd, Batch batch) {
         while (batch.size() < batchsize && !bufferedNoLongerMatched) {
             Tuple currentBuffered = bufferedTuples.get(bufferedItr);
@@ -172,6 +185,10 @@ public class SortMergeJoin extends Join{
         }
     }
 
+    /**
+     * Simulate filling buffers with tuples from sorted object stream.
+     * Set end of file reached if stream returns a null object.
+     **/
     private ArrayList<Tuple> fillTuple(int totalTupleSize, ObjectInputStream sortedFile, int type) {
         ArrayList<Tuple> tuples = new ArrayList<>();
 

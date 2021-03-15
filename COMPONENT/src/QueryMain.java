@@ -84,6 +84,9 @@ public class QueryMain {
 
     /**
      * If there are joins then assigns buffers to each join operator while preparing the plan.
+     * If there are orderby operators then the orderby operators should be able to use all the buffers
+     * as it is usually the last operation and cannot be done in parallel.
+     * Minimum of 3 buffers for merging 2 files and one for output.
      * As buffer manager is not implemented, just input the number of buffers available.
      **/
     private static void configureBufferManager(int numJoin, int numOrderBy, String[] args, BufferedReader in) {
@@ -97,7 +100,9 @@ public class QueryMain {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            } else numBuff = Integer.parseInt(args[3]);
+            } else { numBuff = Integer.parseInt(args[3]);
+            System.out.println(numBuff);
+            }
             BufferManager bm = new BufferManager(numBuff, numJoin);
         }
         /** Check the number of buffers available is enough or not **/
@@ -106,8 +111,8 @@ public class QueryMain {
         if (numJoin > 0 && numBuffPerJoin < 3) {
             System.out.println("Minimum 3 buffers are required per join operator ");
             System.exit(1);
-        } else if (numBuff < 1) {
-            System.out.println("Minimum 1 buffer is required for orderby operator ");
+        } else if (numBuff < 3) {
+            System.out.println("Minimum 3 buffer is required for orderby operator ");
             System.exit(1);
         }
     }

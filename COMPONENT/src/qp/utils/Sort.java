@@ -10,12 +10,13 @@ import qp.operators.OrderType;
 public class Sort {
     private int numBuff;
     private Operator base;
-    private ArrayList<File> sortedRuns = new ArrayList<>();
+    private ArrayList<File> sortedRuns = new ArrayList<>();    // The sorted runs in the current run number
     private int batchsize;
-    private int runNum = 0;
-    private OrderByComparator comparator;
-    private boolean isDistinct = false;
+    private int runNum = 0;                                    // The current run number
+    private OrderByComparator comparator;                      // Comparator to know the ordering that the tuples should be sorted
+    private boolean isDistinct = false;                        // Whether it is an distinct keyword or just a orderby/sort merge
 
+    // Sort constructor for distinct and sort merge join
     public Sort(Operator base, int numBuff, int batchsize, boolean isDistinct) {
         this.base = base;
         this.numBuff = numBuff;
@@ -24,13 +25,15 @@ public class Sort {
         this.isDistinct = isDistinct;
     }
 
+    // Sort constructor for orderby so orderType list is required
     public Sort(Operator base, int numBuff, List<OrderType> orderTypes, int batchsize) {
         this.base = base;
         this.numBuff = numBuff;
         this.comparator = new OrderByComparator(base.getSchema(), orderTypes);
         this.batchsize = batchsize;
     }
-
+    
+    // Perform the sorting and output an ObjectInputStream
     public ObjectInputStream performSort() {
         generateSortedRuns();
         performMerge();
@@ -42,6 +45,12 @@ public class Sort {
         return null;
     }
 
+    /**
+     * Constantly merges the sorted files with the available buffers 
+     * Optimise the number of I/Os by reducing number of runs and using the maximum number of
+     * files to merge with the given buffers.
+     * Outputs temperary files for that run.
+     **/
     private void performMerge() {
         int noOfSortedRuns = sortedRuns.size();
         int noOfMergePasses = (int) Math.ceil(Math.log(noOfSortedRuns) / Math.log(numBuff - 1));
@@ -61,6 +70,14 @@ public class Sort {
         }
     }
 
+    /**
+     * Merge files from the index start to end inclusive.
+     * Simulate buffers for each of the files and populate buffers with tuples from the file.
+     * Get the first tuple of each file and check which should be output first 
+     * by using the comparator.
+     * After that, add another tuple from the file that just been output.
+     * Repeat until no more tuples from the files.
+     **/
     private File mergeSortedRuns(int start, int end) {
         int numOfSortedRuns = end - start + 1;
         int numBuffersPerSortedRun = (numBuff - 1) / numOfSortedRuns;
@@ -90,7 +107,6 @@ public class Sort {
             }
         }
 
-        // change to be able to do desc
         Tuple[] tuplesInRun = new Tuple[batchsize];
         int added = 0;
 
@@ -167,6 +183,9 @@ public class Sort {
         return sortedRun;
     }
 
+    /**
+     * Fill buffers with tuples from the file.
+     **/
     private ArrayList<Tuple> fillBuffers(ObjectInputStream ois, int fileNo, int noToFill,
             Boolean[] trackToStopForEachSortedRun) throws FileNotFoundException, IOException, ClassNotFoundException {
         ArrayList<Tuple> filledBuffers = new ArrayList<>();
@@ -182,6 +201,10 @@ public class Sort {
         return filledBuffers;
     }
 
+    /**
+     * Insert tuples into sorted order according to the comparator.
+     * If this is DISTINCT, tuple will not be inserted if the two tuples are equal.
+     **/
     private ArrayList<Tuple> insertInSortedOrder(ArrayList<Tuple> tupleList, ArrayList<Integer> sortedOrder,
             int fromWhichSortedRun, Tuple toInsert) {
         if (tupleList.size() == 0) {
@@ -208,6 +231,11 @@ public class Sort {
         return tupleList;
     }
 
+    /**
+     * Uses (total buffers - 1) buffers to create the first sorted runs.
+     * Buffers are populated with tuples and sorted accorded to the comparator.
+     * If this is DISTINCT, the duplicate tuples will be removed.
+     **/
     private void generateSortedRuns() {
         int totalTuplesInBuffs = batchsize * numBuff;
         Tuple[] tuplesInRun = new Tuple[totalTuplesInBuffs];
@@ -269,6 +297,7 @@ public class Sort {
         }
     }
 
+    // Remove duplicates for DISTINCT
     private Tuple[] removeDuplicates(Tuple[] toRemove) {
         Set<Tuple> sortedAndMerged = new TreeSet<Tuple>(comparator);
         for (int i = 0; i < toRemove.length; i++) {

@@ -12,10 +12,10 @@ public class Distinct extends Operator {
     Operator base;
     int batchsize; // Number of tuples per out batch
     Batch outbatch; // Buffer page for output
-    private ObjectInputStream lastSortedFile = null;
-    private Sort sort;
-    private boolean endOfSortedFile = false;
-    private int numBuff;
+    private ObjectInputStream lastSortedFile = null; 
+    private Sort sort;  // Sort utility to do a Distinct Sort
+    private boolean endOfSortedFile = false;   // Indicate if there are anymore tuples from stream
+    private int numBuff;  // Total number of buffers for Distinct sort
 
     public Distinct(Operator base, int type, int numBuff) {
         super(type);

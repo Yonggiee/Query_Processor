@@ -86,8 +86,22 @@ public class PlanCost {
         return 0;
     }
 
+    /**
+     * Returns the number of I/Os for Distinct operator
+     * Distinct uses sorting
+     * The cost of the operator is sorting the tuples
+     * Assume all distinct in the worst case, 
+     * number of passes same as orderby operator.
+     **/
     private long getStatistics(Distinct node) {
-        return 0;
+        long noOfTuples = calculateCost(node);
+        long tuplesize = node.getSchema().getTupleSize();
+        long capacity = Math.max(1, Batch.getPageSize() / tuplesize);
+        long numPages = (long) Math.ceil(((double) noOfTuples) / (double) capacity);
+        long numBuffs = BufferManager.getNumBuffers();
+        int numPasses = 1 + (int) Math.ceil(Math.log(Math.ceil(numPages / (1.0 * numBuffs))) / Math.log(numPages - 1));
+
+        return numPasses * numPages * 2;
     }
 
     /**
@@ -98,14 +112,19 @@ public class PlanCost {
         return calculateCost(node.getBase());
     }
 
+    /**
+     * Returns the number of I/Os for Orderby operator 
+     * Orderby uses sorting 
+     **/
     private long getStatistics(OrderBy node) {
-        // ToDo
-        int numBuffs = node.getBuffers();
-        int numPages = node.getPages();
+        long noOfTuples = calculateCost(node);
+        long tuplesize = node.getSchema().getTupleSize();
+        long capacity = Math.max(1, Batch.getPageSize() / tuplesize);
+        long numPages = (long) Math.ceil(((double) noOfTuples) / (double) capacity);
+        long numBuffs = BufferManager.getNumBuffers();
         int numPasses = 1 + (int) Math.ceil(Math.log(Math.ceil(numPages / (1.0 * numBuffs))) / Math.log(numPages - 1));
-        cost += 2 * numPages * numPasses;
 
-        return calculateCost(node.getBase());
+        return numPasses * numPages * 2;
     }
     /**
      * Calculates the statistics and cost of join operation
@@ -123,7 +142,6 @@ public class PlanCost {
 
         /** Get size of the tuple in output & correspondigly calculate
          ** buffer capacity, i.e., number of tuples per page **/
-        System.out.println(node.getSchema());
         long tuplesize = node.getSchema().getTupleSize();
         long outcapacity = Math.max(1, Batch.getPageSize() / tuplesize);
         long leftuplesize = leftschema.getTupleSize();

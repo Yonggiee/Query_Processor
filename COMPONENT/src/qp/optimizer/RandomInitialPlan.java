@@ -188,6 +188,7 @@ public class RandomInitialPlan {
 
     /**
      * Create OrderBy Operator
+     * Uses all the buffers for the Orderby operator
      **/
     public void createOrderByOp() {
         if (sqlquery.getOrderByList().size() == 0) {
@@ -205,6 +206,10 @@ public class RandomInitialPlan {
         root.setSchema(base.getSchema());
     }
 
+    /**
+     * Create Distinct Operator 
+     * Uses all the buffers for the Distinct operator
+     **/
     public void createDistinctOp() {
         if (!sqlquery.isDistinct()) {
             return;

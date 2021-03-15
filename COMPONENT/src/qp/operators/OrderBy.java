@@ -9,8 +9,8 @@ import java.io.*;
 import java.util.*;
 
 /**
- * The OrderBy operator will order specified attributes and order type (ASC or
- * DESC). This is implemented using external sorting.
+ * OrderBy operator will sort specified attributes and order type (ASC or DESC)
+ * Uses the Sort utility to get the sorted object stream
  */
 public class OrderBy extends Operator {
 
