@@ -49,10 +49,6 @@ public class RandomInitialPlan {
      * prepare initial plan for the query
      **/
     public Operator prepareInitialPlan() {
-        if (sqlquery.getGroupByList().size() > 0) {
-            System.err.println("GroupBy is not implemented.");
-            System.exit(1);
-        }
 
         tab_op_hash = new HashMap<>();
         createScanOp();
@@ -62,6 +58,9 @@ public class RandomInitialPlan {
         }
         createProjectOp();
         createDistinctOp();
+        if (sqlquery.getGroupByList().size() > 0) {
+            createGroupByOp();
+        }
         createOrderByOp();
 
         return root;
@@ -212,6 +211,18 @@ public class RandomInitialPlan {
         Operator base = root;
         root = new Distinct(base, OpType.DISTINCT, BufferManager.getNumBuffers());
         root.setSchema(base.getSchema());
+    }
+
+    private void createGroupByOp() {
+        ArrayList<Attribute> groupbyList = sqlquery.getGroupByList();
+        if (groupbyList == null) {
+            return;
+        }
+        else if (!groupbyList.isEmpty()) {
+            Operator base = root;
+            root = new GroupBy(base, groupbyList, BufferManager.getNumBuffers());
+            root.setSchema(base.getSchema());
+        }
     }
 
     private void modifyHashtable(Operator old, Operator newop) {

@@ -132,4 +132,10 @@ public class SQLQuery {
             return 0;
         return joinList.size();
     }
+
+    public int getNumGroupBy() {
+        if (groupbyList == null)
+            return 0;
+        return groupbyList.size();
+    }
 }
