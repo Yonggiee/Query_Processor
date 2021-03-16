@@ -46,3 +46,7 @@ COMPONENT/testcases/makefile
 COMPONENT/testcases/query.out
 COMPONENT/testcases/queryin.sql
 COMPONENT/src/qp/operators/BlockNestedJoin.java@array
+COMPONENT/testcases/CARTDETAILS.md
+COMPONENT/testcases/CARTDETAILS.stat
+COMPONENT/testcases/CARTDETAILS.tbl
+COMPONENT/testcases/CARTDETAILS.txt

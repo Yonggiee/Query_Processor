@@ -12,6 +12,7 @@ import java.io.*;
  */
 public class Tuple implements Serializable {
 
+    private static final long serialVersionUID = 1928781161746223552L;
     public ArrayList<Object> _data;
 
     public Tuple(ArrayList<Object> d) {
@@ -54,6 +55,38 @@ public class Tuple implements Serializable {
             Object rightData = right.dataAt(rightindex.get(i));
             if (!leftData.equals(rightData)) {
                 return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks whether the join condition is satisfied or not with multiple conditions
+     * * before performing actual join operation
+     **/
+    public boolean checkJoin(Tuple right, ArrayList<Integer> leftindex, ArrayList<Integer> rightindex, ArrayList<Integer> exprindex) {
+        if (leftindex.size() != rightindex.size())
+            return false;
+        for (int i = 0; i < leftindex.size(); ++i) {
+            // Object leftData = dataAt(leftindex.get(i));
+            // Object rightData = right.dataAt(rightindex.get(i));
+            int expr = exprindex.get(i);
+            // if (!leftData.equals(rightData)) {
+            //     return false;
+            // }
+            switch(expr) {
+                case Condition.LESSTHAN:
+                    if (compareTuples(this, right, leftindex.get(i), rightindex.get(i)) < 0) { continue; } else { return false; }
+                case Condition.GREATERTHAN:
+                    if (compareTuples(this, right, leftindex.get(i), rightindex.get(i)) > 0) { continue; } else { return false; }
+                case Condition.LTOE:
+                    if (compareTuples(this, right, leftindex.get(i), rightindex.get(i)) <= 0) { continue; } else { return false; }
+                case Condition.GTOE:
+                    if (compareTuples(this, right, leftindex.get(i), rightindex.get(i)) >= 0) { continue; } else { return false; }
+                case Condition.EQUAL:
+                    if (compareTuples(this, right, leftindex.get(i), rightindex.get(i)) == 0) { continue; } else { return false; }
+                default:
+                    return false;
             }
         }
         return true;
