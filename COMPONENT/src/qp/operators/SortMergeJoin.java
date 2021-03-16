@@ -20,6 +20,7 @@ public class SortMergeJoin extends Join{
     private ArrayList<Integer> rightindex;
     private List<OrderType> leftOrderType;
     private List<OrderType> rightOrderType;
+    Boolean isCartesian;
 
     private Sort leftSort;
     private ObjectInputStream leftSortedFile = null;
@@ -68,18 +69,23 @@ public class SortMergeJoin extends Join{
         leftOrderType = new ArrayList<OrderType>();
         rightOrderType = new ArrayList<OrderType>();
 
-        conditionList = Condition.sortConditionList(conditionList);
-        for (Condition con : conditionList) {
-            Attribute leftattr = con.getLhs();
-            leftindex.add(left.getSchema().indexOf(leftattr));
-            OrderType leftOrder = new OrderType(leftattr, OrderType.Order.ASC);
-            leftOrderType.add(leftOrder);
+        if (conditionList.size() == 0) {
+            isCartesian = true;
+        } else {
+            isCartesian = false;
+            conditionList = Condition.sortConditionList(conditionList);
+            for (Condition con : conditionList) {
+                Attribute leftattr = con.getLhs();
+                leftindex.add(left.getSchema().indexOf(leftattr));
+                OrderType leftOrder = new OrderType(leftattr, OrderType.Order.ASC);
+                leftOrderType.add(leftOrder);
 
-            Attribute rightattr = (Attribute) con.getRhs();
-            rightindex.add(right.getSchema().indexOf(rightattr));
-            OrderType rightOrder = new OrderType(rightattr, OrderType.Order.ASC);
-            rightOrderType.add(rightOrder);
-        }
+                Attribute rightattr = (Attribute) con.getRhs();
+                rightindex.add(right.getSchema().indexOf(rightattr));
+                OrderType rightOrder = new OrderType(rightattr, OrderType.Order.ASC);
+                rightOrderType.add(rightOrder);
+            }
+        } 
         leftSort = new Sort(left, numBuff, leftOrderType, batchsize);
         leftSortedFile = this.leftSort.performSort();
         rightSort = new Sort(right, numBuff, rightOrderType, batchsize);
@@ -117,7 +123,7 @@ public class SortMergeJoin extends Join{
             Tuple right = rightSideTuples.get(rightItr);
             boolean canMerge = left.checkJoin(right, leftindex, rightindex);
 
-            if (canMerge) {
+            if (isCartesian || canMerge) {
                 Tuple mergeTuple = left.joinWith(right);
                 outbatch.add(mergeTuple);
                 added += 1;
@@ -178,7 +184,7 @@ public class SortMergeJoin extends Join{
         while (batch.size() < batchsize && !bufferedNoLongerMatched) {
             Tuple currentBuffered = bufferedTuples.get(bufferedItr);
             boolean canMerge = toAdd.checkJoin(currentBuffered, leftindex, rightindex);
-            if (canMerge) {
+            if (isCartesian || canMerge) {
                 Tuple mergeTuple = toAdd.joinWith(currentBuffered);
                 batch.add(mergeTuple);
                 bufferedItr -= 1;

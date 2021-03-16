@@ -23,6 +23,7 @@ public class NestedJoin extends Join {
     Batch leftbatch;                // Buffer page for left input stream
     Batch rightbatch;               // Buffer page for right input stream
     ObjectInputStream in;           // File pointer to the right hand materialized file
+    Boolean isCartesian;              // Check if this is for cartesian 
 
     int lcurs;                      // Cursor for left side buffer
     int rcurs;                      // Cursor for right side buffer
@@ -54,12 +55,19 @@ public class NestedJoin extends Join {
         /** find indices attributes of join conditions **/
         leftindex = new ArrayList<>();
         rightindex = new ArrayList<>();
-        for (Condition con : conditionList) {
-            Attribute leftattr = con.getLhs();
-            Attribute rightattr = (Attribute) con.getRhs();
-            leftindex.add(left.getSchema().indexOf(leftattr));
-            rightindex.add(right.getSchema().indexOf(rightattr));
+
+        if (conditionList.size() == 0) {
+            isCartesian = true;
+        } else {
+            isCartesian = false;
+            for (Condition con : conditionList) {
+                Attribute leftattr = con.getLhs();
+                Attribute rightattr = (Attribute) con.getRhs();
+                leftindex.add(left.getSchema().indexOf(leftattr));
+                rightindex.add(right.getSchema().indexOf(rightattr));
+            }
         }
+
         Batch rightpage;
 
         /** initialize the cursors of input buffers **/
@@ -141,7 +149,7 @@ public class NestedJoin extends Join {
                         for (j = rcurs; j < rightbatch.size(); ++j) {
                             Tuple lefttuple = leftbatch.get(i);
                             Tuple righttuple = rightbatch.get(j);
-                            if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
+                            if (isCartesian || lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
                                 Tuple outtuple = lefttuple.joinWith(righttuple);
                                 outbatch.add(outtuple);
                                 if (outbatch.isFull()) {

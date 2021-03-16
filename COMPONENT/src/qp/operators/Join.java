@@ -17,12 +17,14 @@ public class Join extends Operator {
     int numBuff;                         // Number of buffers available
     int jointype;                        // JoinType.NestedJoin/SortMerge/HashJoin
     int nodeIndex;                       // Each join node is given a number
+    boolean isCartesian;                 // Cartesian Join
 
     public Join(Operator left, Operator right, int type) {
         super(type);
         this.left = left;
         this.right = right;
         conditionList = new ArrayList<>();
+        isCartesian = true;
     }
 
     public Join(Operator left, Operator right, Condition condition, int type) {
@@ -80,8 +82,14 @@ public class Join extends Operator {
         this.right = right;
     }
 
+    public boolean getIsCartesian() {
+        return this.isCartesian;
+    }
+
     public Condition getCondition() {
-        assert (conditionList.size() > 0);
+        if (conditionList.size() == 0) {
+            return new Condition(7);
+        }
         return conditionList.get(0);
     }
 

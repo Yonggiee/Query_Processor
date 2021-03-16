@@ -15,6 +15,7 @@ public class Condition {
     public static final int GTOE = 4;
     public static final int EQUAL = 5;
     public static final int NOTEQUAL = 6;
+    public static final int CARTESIAN = 7;
 
     public static final int SELECT = 1;
     public static final int JOIN = 2;

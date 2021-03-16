@@ -252,9 +252,14 @@ public class RandomOptimizer {
         /** find the node to be altered**/
         Join op = (Join) findNodeAt(root, joinNum);
         Operator left = op.getLeft();
-        Operator right = op.getRight();
+        Operator right = op.getRight(); 
 
-        if (left.getOpType() == OpType.JOIN && right.getOpType() != OpType.JOIN) {
+        if (op.getOpType() == OpType.JOIN && ((Join) op).getIsCartesian()) {
+        } else if (left.getOpType() == OpType.JOIN && ((Join) left).getIsCartesian()) {
+        }  else if (right.getOpType() == OpType.JOIN && ((Join) right).getIsCartesian()) {
+        } else if (left.getOpType() == OpType.JOIN && right.getOpType() != OpType.JOIN) {
+            System.out.println(((Join) op).getLeft().getOpType());
+            System.out.println(((Join) op).getRight().getOpType());
             transformLefttoRight(op, (Join) left);
         } else if (left.getOpType() != OpType.JOIN && right.getOpType() == OpType.JOIN) {
             transformRighttoLeft(op, (Join) right);
@@ -280,39 +285,42 @@ public class RandomOptimizer {
         Operator right = op.getRight();
         Operator leftleft = left.getLeft();
         Operator leftright = left.getRight();
-        Attribute leftAttr = op.getCondition().getLhs();
+        Condition condition = op.getCondition();
+        Attribute leftAttr = condition.getLhs();
         Join temp;
 
-        if (leftright.getSchema().contains(leftAttr)) {
-            System.out.println("----------------CASE 1-----------------");
-            /** CASE 1 :  ( A X a1b1 B) X b4c4  C     =  A X a1b1 (B X b4c4 C)
-             ** a1b1,  b4c4 are the join conditions at that join operator
-             **/
-            temp = new Join(leftright, right, op.getCondition(), OpType.JOIN);
-            temp.setJoinType(op.getJoinType());
-            temp.setNodeIndex(op.getNodeIndex());
-            op.setLeft(leftleft);
-            op.setJoinType(left.getJoinType());
-            op.setNodeIndex(left.getNodeIndex());
-            op.setRight(temp);
-            op.setCondition(left.getCondition());
+        if (condition.getExprType() != 7) {
+            if (leftright.getSchema().contains(leftAttr)) {
+                System.out.println("----------------CASE 1-----------------");
+                /** CASE 1 :  ( A X a1b1 B) X b4c4  C     =  A X a1b1 (B X b4c4 C)
+                 ** a1b1,  b4c4 are the join conditions at that join operator
+                **/
+                temp = new Join(leftright, right, op.getCondition(), OpType.JOIN);
+                temp.setJoinType(op.getJoinType());
+                temp.setNodeIndex(op.getNodeIndex());
+                op.setLeft(leftleft);
+                op.setJoinType(left.getJoinType());
+                op.setNodeIndex(left.getNodeIndex());
+                op.setRight(temp);
+                op.setCondition(left.getCondition());
 
-        } else {
-            System.out.println("--------------------CASE 2---------------");
-            /**CASE 2:   ( A X a1b1 B) X a4c4  C     =  B X b1a1 (A X a4c4 C)
-             ** a1b1,  a4c4 are the join conditions at that join operator
-             **/
-            temp = new Join(leftleft, right, op.getCondition(), OpType.JOIN);
-            temp.setJoinType(op.getJoinType());
-            temp.setNodeIndex(op.getNodeIndex());
-            op.setLeft(leftright);
-            op.setRight(temp);
-            op.setJoinType(left.getJoinType());
-            op.setNodeIndex(left.getNodeIndex());
-            Condition newcond = left.getCondition();
-            newcond.flip();
-            op.setCondition(newcond);
-        }
+            } else {
+                System.out.println("--------------------CASE 2---------------");
+                /**CASE 2:   ( A X a1b1 B) X a4c4  C     =  B X b1a1 (A X a4c4 C)
+                 ** a1b1,  a4c4 are the join conditions at that join operator
+                **/
+                temp = new Join(leftleft, right, op.getCondition(), OpType.JOIN);
+                temp.setJoinType(op.getJoinType());
+                temp.setNodeIndex(op.getNodeIndex());
+                op.setLeft(leftright);
+                op.setRight(temp);
+                op.setJoinType(left.getJoinType());
+                op.setNodeIndex(left.getNodeIndex());
+                Condition newcond = left.getCondition();
+                newcond.flip();
+                op.setCondition(newcond);
+            }
+        }   
     }
 
     protected void transformRighttoLeft(Join op, Join right) {

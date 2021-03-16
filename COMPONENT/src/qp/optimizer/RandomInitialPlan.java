@@ -57,9 +57,7 @@ public class RandomInitialPlan {
         tab_op_hash = new HashMap<>();
         createScanOp();
         createSelectOp();
-        if (numJoin != 0) {
-            createJoinOp();
-        }
+        createJoinOp();
         createProjectOp();
         createDistinctOp();
         createOrderByOp();
@@ -137,10 +135,11 @@ public class RandomInitialPlan {
      * create join operators
      **/
     public void createJoinOp() {
+        ArrayList<String> cartesianTable = findCartesianTables();
+
         BitSet bitCList = new BitSet(numJoin);
         int jnnum = RandNumb.randInt(0, numJoin - 1);
         Join jn = null;
-
         /** Repeat until all the join conditions are considered **/
         while (bitCList.cardinality() != numJoin) {
             /** If this condition is already consider chose
@@ -168,11 +167,59 @@ public class RandomInitialPlan {
             bitCList.set(jnnum);
         }
 
+        if (cartesianTable.size() > 0) {
+            Operator left;
+            int i = 0;
+            if (numJoin > 0) {
+                Condition cn = (Condition) joinlist.get(jnnum);
+                String lefttab = cn.getLhs().getTabName();
+                left = (Operator) tab_op_hash.get(lefttab);
+                i = 0;
+            } else {
+                left = (Operator) tab_op_hash.get(cartesianTable.get(0));
+                i = 1;
+            }
+            for (; i < cartesianTable.size(); i++) {
+                Operator right = (Operator) tab_op_hash.get(cartesianTable.get(i));
+                jn = new Join(left, right, OpType.JOIN);
+                Schema newsche = left.getSchema().joinWith(right.getSchema());
+                jn.setSchema(newsche);
+                int numJMeth = JoinType.numJoinTypes();
+                int joinMeth = RandNumb.randInt(0, numJMeth - 1);
+                jn.setJoinType(joinMeth);
+                modifyHashtable(left, jn);
+                modifyHashtable(right, jn);
+            }
+        }
         /** The last join operation is the root for the
          ** constructed till now
          **/
-        if (numJoin != 0)
+        if (numJoin != 0 || cartesianTable.size() > 0) {
             root = jn;
+        } 
+    }
+
+    private ArrayList<String> findCartesianTables() {
+        ArrayList<String> cartesianTables = new ArrayList<>();
+
+        HashMap<String, Boolean> tablesWithConditions = new HashMap<String, Boolean>();
+
+        for (int i = 0; i < joinlist.size(); i++) {
+            Condition cn = (Condition) joinlist.get(i);
+            String lefttab = cn.getLhs().getTabName();
+            String righttab = ((Attribute) cn.getRhs()).getTabName();
+            tablesWithConditions.put(lefttab, true);
+            tablesWithConditions.put(righttab, true);
+        }
+
+        for (int i = 0; i < fromlist.size(); i++) {
+            String tablename = fromlist.get(i);
+            if (!tablesWithConditions.containsKey(tablename)) {
+                cartesianTables.add(tablename);
+            }
+        }
+
+        return cartesianTables;
     }
 
     public void createProjectOp() {

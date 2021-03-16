@@ -28,35 +28,40 @@ public class Debug {
      * print the condition
      **/
     public static void PPrint(Condition con) {
-        Attribute lhs = con.getLhs();
-        Object rhs = con.getRhs();
         int exprtype = con.getExprType();
-        PPrint(lhs);
-        switch (exprtype) {
-            case Condition.LESSTHAN:
-                System.out.print("<");
-                break;
-            case Condition.GREATERTHAN:
-                System.out.print(">");
-                break;
-            case Condition.LTOE:
-                System.out.print("<=");
-                break;
-            case Condition.GTOE:
-                System.out.print(">=");
-                break;
-            case Condition.EQUAL:
-                System.out.print("==");
-                break;
-            case Condition.NOTEQUAL:
-                System.out.print("!=");
-                break;
-        }
+        if (exprtype == Condition.CARTESIAN) {
+            System.out.print("X");
+        } else {
+            Attribute lhs = con.getLhs();
+            Object rhs = con.getRhs();
+            PPrint(lhs);
+            switch (exprtype) {
+                case Condition.LESSTHAN:
+                    System.out.print("<");
+                    break;
+                case Condition.GREATERTHAN:
+                    System.out.print(">");
+                    break;
+                case Condition.LTOE:
+                    System.out.print("<=");
+                    break;
+                case Condition.GTOE:
+                    System.out.print(">=");
+                    break;
+                case Condition.EQUAL:
+                    System.out.print("==");
+                    break;
+                case Condition.NOTEQUAL:
+                    System.out.print("!=");
+                    break;
+            }
+        
 
-        if (con.getOpType() == Condition.JOIN) {
-            PPrint((Attribute) rhs);
-        } else if (con.getOpType() == Condition.SELECT) {
-            System.out.print((String) rhs);
+            if (con.getOpType() == Condition.JOIN) {
+                PPrint((Attribute) rhs);
+            } else if (con.getOpType() == Condition.SELECT) {
+                System.out.print((String) rhs);
+            }
         }
     }
 
@@ -98,7 +103,12 @@ public class Debug {
             }
             PPrint(((Join) node).getLeft());
             System.out.print("  [");
-            PPrint(((Join) node).getCondition());
+            if (!((Join) node).isCartesian) {
+                PPrint(((Join) node).getCondition());
+            } else {
+                System.out.print("X");
+            }
+
             System.out.print("]  ");
             PPrint(((Join) node).getRight());
             System.out.print(")");
