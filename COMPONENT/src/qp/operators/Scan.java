@@ -44,6 +44,10 @@ public class Scan extends Operator {
         /** num of tuples per batch**/
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
+        if (batchsize == 0) {
+            System.out.println("Terminating as page size too small for one tuple... At least " + tuplesize + " is required.");
+            return false;
+        }
         eos = false;
         try {
             in = new ObjectInputStream(new FileInputStream(filename));

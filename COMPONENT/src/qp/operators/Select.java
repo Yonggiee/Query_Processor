@@ -56,6 +56,10 @@ public class Select extends Operator {
         /** Set number of tuples per page**/
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
+        if (batchsize == 0) {
+            System.out.println("Terminating as page size too small for one tuple... At least " + tuplesize + " is required.");
+            return false;
+        }
 
         if (base.open())
             return true;

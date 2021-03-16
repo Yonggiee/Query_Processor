@@ -58,6 +58,11 @@ public class Project extends Operator {
         /** set number of tuples per batch **/
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
+        if (batchsize == 0) {
+            System.out.println(
+                    "Terminating as page size too small for one tuple... At least " + tuplesize + " is required.");
+            return false;
+        }
 
         if (!base.open()) return false;
 

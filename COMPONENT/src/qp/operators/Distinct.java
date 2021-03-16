@@ -29,6 +29,13 @@ public class Distinct extends Operator {
         }
         int tuplesize = base.schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
+
+        if (batchsize == 0) {
+            System.out.println(
+                    "Terminating as page size too small for one tuple... At least " + tuplesize + " is required.");
+            return false;
+        }
+        
         this.sort = new Sort(base, numBuff, batchsize, true);
         lastSortedFile = this.sort.performSort();
 
