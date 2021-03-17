@@ -30,6 +30,7 @@ public class QueryMain {
         SQLQuery sqlquery = getSQLQuery(args[0]);
         configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrderBy(), args, in);
 
+        //System.out.println("debugging 1: " + sqlquery.getProjectList());
         Operator root = getQueryPlan(sqlquery);
         printFinalPlan(root, args, in);
         executeQuery(root, args[1]);
@@ -102,7 +103,9 @@ public class QueryMain {
         }
         /** Check the number of buffers available is enough or not **/
         int numBuffPerJoin = BufferManager.getBuffersPerJoin();
-        int numBuff = BufferManager.getNumBuffers();
+        //int numBuff = BufferManager.getNumBuffers();
+        //debugging Aggregate, TODO: resolve numBuff issue later
+        int numBuff = 50;
         if (numJoin > 0 && numBuffPerJoin < 3) {
             System.out.println("Minimum 3 buffers are required per join operator ");
             System.exit(1);
@@ -171,23 +174,33 @@ public class QueryMain {
         }
 
         /** Print the schema of the result **/
+        //System.out.println("debugging 7: reached querymain");
         Schema schema = root.getSchema();
+        //System.out.println("debugging 8: " + root.getSchema());
         numAtts = schema.getNumCols();
+        //System.out.println("debugging 9: " + numAtts + " " + schema.getAttList());
         printSchema(schema);
+        //System.out.println("debugging 10");
 
         /** Print each tuple in the result **/
         Batch resultbatch;
         while ((resultbatch = root.next()) != null) {
+            //System.out.println("debugging 10b: " + resultbatch.size());
             for (int i = 0; i < resultbatch.size(); ++i) {
                 printTuple(resultbatch.get(i));
             }
         }
+        //System.out.println("debugging 11");
         root.close();
         out.close();
+        //System.out.println("debugging 12");
 
         long endtime = System.currentTimeMillis();
+        //System.out.println("debugging 13");
         double executiontime = (endtime - starttime) / 1000.0;
+        //System.out.println("debugging 14");
         System.out.println("Execution time = " + executiontime);
+        //System.out.println("debugging 15");
         return executiontime;
     }
 

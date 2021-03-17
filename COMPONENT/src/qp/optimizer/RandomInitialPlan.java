@@ -181,6 +181,7 @@ public class RandomInitialPlan {
             projectlist = new ArrayList<Attribute>();
         if (!projectlist.isEmpty()) {
             root = new Project(base, projectlist, OpType.PROJECT);
+            //System.out.println("debugging 2: " + base.getSchema() + projectlist);
             Schema newSchema = base.getSchema().subSchema(projectlist);
             root.setSchema(newSchema);
         }

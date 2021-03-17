@@ -21,9 +21,6 @@ public class AggregateAttribute {
             case Attribute.MAX:
                 aggregateVal = null;
                 break;
-            case Attribute.SUM:
-                aggregateVal = 0;
-                break;
             case Attribute.COUNT:
                 aggregateVal = 0;
                 break;
@@ -54,8 +51,6 @@ public class AggregateAttribute {
                 if (aggregateVal == null || (int) aggregateVal < (int) val) {
                     aggregateVal = val;
                 }
-            } else if (aggregateType == Attribute.SUM) {
-                aggregateVal = (int)aggregateVal + (int)val;
             } else if (aggregateType == Attribute.COUNT) {
                 aggregateVal = (int)aggregateVal + 1;
             } else if (aggregateType == Attribute.AVG) {

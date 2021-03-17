@@ -9,11 +9,12 @@ public class Aggregate extends Operator {
     ArrayList<Attribute> attrset;
     int[] attrIndex;
     int batchsize;
+    int tuplesize;
     ArrayList<Tuple> outtuples;
     private boolean endOfStream;
 
 
-    public Aggregate(Operator base, ArrayList<AggregateAttribute> aggregate, ArrayList<Attribute> attrset, int[] attrIndex) {
+    public Aggregate(Operator base, ArrayList<AggregateAttribute> aggregate, ArrayList<Attribute> attrset, int[] attrIndex, int tuplesize) {
         super(OpType.AGGREGATE);
         this.base = base;
         this.aggregateAttr = aggregate;
@@ -21,12 +22,11 @@ public class Aggregate extends Operator {
         this.attrIndex = attrIndex;
         this.outtuples = new ArrayList<Tuple>();
         this.endOfStream = false;
-
+        this.tuplesize = tuplesize;
 
     }
 
     public boolean open() {
-        int tuplesize = base.schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
         while (!endOfStream) {
             Batch inbatch = base.next();
@@ -34,7 +34,7 @@ public class Aggregate extends Operator {
                 endOfStream = true;
                 continue;
             }
-            for (int i = 0; i < batchsize; i++) {
+            for (int i = 0; i < inbatch.size(); i++) {
                 if (i > inbatch.size()) {
                     endOfStream = true;
                     break;
@@ -46,21 +46,21 @@ public class Aggregate extends Operator {
                 }
             }
         }
+        //System.out.println("debugging 5: reached here");
         return true;
     }
 
     public Batch next() {
         Batch outbatch = new Batch(batchsize);
-        int added = 0;
-        
+        //System.out.println("debugging 123456789");
         if (outtuples.size() == 0) {
             return null;
         }
 
         for (int i = 1; i <= batchsize; i++) {
             ArrayList<Object> updatedtuple = new ArrayList<>();
-            if (i <= outtuples.size()) {
-                Tuple originaltuple = outtuples.get(i-1);
+            if (outtuples.size() > 0) {
+                Tuple originaltuple = outtuples.remove(0);
                 updatedtuple.addAll(originaltuple.data());
                 for (int j = 0; j < attrset.size(); j++) {
                     if (attrset.get(j).getAggType() == Attribute.NONE) {
@@ -73,14 +73,14 @@ public class Aggregate extends Operator {
                         }
                     }
                 }
-                Tuple outtuple = new Tuple(updatedtuple);
-                outbatch.add(outtuple);
-                added += 1;
             } else {
                 break;
             }
+            Tuple outtuple = new Tuple(updatedtuple);
+            outbatch.add(outtuple);
+            //System.out.println("debugging AA: added +1 " + i + " " + batchsize + " " + outtuples.size() + " " + outbatch.size());
         }
-        if (added == 0) {
+        if (outbatch.size() == 0) {
             return null;
         } else {
             return outbatch;
@@ -93,7 +93,7 @@ public class Aggregate extends Operator {
 
     public Object clone() {
         Operator clone = (Operator) base.clone();
-        Aggregate cloneAgg = new Aggregate(clone, aggregateAttr, attrset, attrIndex);
+        Aggregate cloneAgg = new Aggregate(clone, aggregateAttr, attrset, attrIndex, tuplesize);
         cloneAgg.setSchema((Schema) schema.clone());
         return cloneAgg;
     }
