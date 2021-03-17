@@ -28,7 +28,8 @@ public class QueryMain {
         Batch.setPageSize(getPageSize(args, in));
 
         SQLQuery sqlquery = getSQLQuery(args[0]);
-        configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrderBy(), args, in);
+        //System.out.println("debugging abc: " + sqlquery.getProjectList());
+        configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrderBy(), sqlquery.getNumAggregate(), args, in);
 
         //System.out.println("debugging 1: " + sqlquery.getProjectList());
         Operator root = getQueryPlan(sqlquery);
@@ -87,8 +88,8 @@ public class QueryMain {
      * If there are joins then assigns buffers to each join operator while preparing the plan.
      * As buffer manager is not implemented, just input the number of buffers available.
      **/
-    private static void configureBufferManager(int numJoin, int numOrderBy, String[] args, BufferedReader in) {
-        if (numJoin != 0 || numOrderBy != 0) {
+    private static void configureBufferManager(int numJoin, int numOrderBy, int numAggregate, String[] args, BufferedReader in) {
+        if (numJoin != 0 || numOrderBy != 0 || numAggregate != 0) {
             int numBuff = 1000;
             if (args.length < 4) {
                 System.out.println("enter the number of buffers available");
@@ -103,9 +104,7 @@ public class QueryMain {
         }
         /** Check the number of buffers available is enough or not **/
         int numBuffPerJoin = BufferManager.getBuffersPerJoin();
-        //int numBuff = BufferManager.getNumBuffers();
-        //debugging Aggregate, TODO: resolve numBuff issue later
-        int numBuff = 50;
+        int numBuff = BufferManager.getNumBuffers();
         if (numJoin > 0 && numBuffPerJoin < 3) {
             System.out.println("Minimum 3 buffers are required per join operator ");
             System.exit(1);
