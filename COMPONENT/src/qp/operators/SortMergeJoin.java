@@ -18,6 +18,7 @@ public class SortMergeJoin extends Join{
     private int batchsize;
 	private ArrayList<Integer> leftindex;
     private ArrayList<Integer> rightindex;
+    private ArrayList<Integer> exprindex;
     private List<OrderType> leftOrderType;
     private List<OrderType> rightOrderType;
     Boolean isCartesian;
@@ -65,6 +66,7 @@ public class SortMergeJoin extends Join{
         bufferedTuples = new ArrayList<>();
         leftindex = new ArrayList<>();
         rightindex = new ArrayList<>();
+        exprindex = new ArrayList<>();
 
         leftOrderType = new ArrayList<OrderType>();
         rightOrderType = new ArrayList<OrderType>();
@@ -84,6 +86,9 @@ public class SortMergeJoin extends Join{
                 rightindex.add(right.getSchema().indexOf(rightattr));
                 OrderType rightOrder = new OrderType(rightattr, OrderType.Order.ASC);
                 rightOrderType.add(rightOrder);
+
+                int compareType = con.getExprType();
+                exprindex.add(compareType);
             }
         } 
         leftSort = new Sort(left, numBuff, leftOrderType, batchsize);
@@ -121,7 +126,7 @@ public class SortMergeJoin extends Join{
                 }
             }
             Tuple right = rightSideTuples.get(rightItr);
-            boolean canMerge = left.checkJoin(right, leftindex, rightindex);
+            boolean canMerge = left.checkJoin(right, leftindex, rightindex, exprindex);
 
             if (isCartesian || canMerge) {
                 Tuple mergeTuple = left.joinWith(right);
@@ -183,7 +188,7 @@ public class SortMergeJoin extends Join{
     private void checkCanAddBufferedTuples(Tuple toAdd, Batch batch) {
         while (batch.size() < batchsize && !bufferedNoLongerMatched) {
             Tuple currentBuffered = bufferedTuples.get(bufferedItr);
-            boolean canMerge = toAdd.checkJoin(currentBuffered, leftindex, rightindex);
+            boolean canMerge = toAdd.checkJoin(currentBuffered, leftindex, rightindex, exprindex);
             if (isCartesian || canMerge) {
                 Tuple mergeTuple = toAdd.joinWith(currentBuffered);
                 batch.add(mergeTuple);

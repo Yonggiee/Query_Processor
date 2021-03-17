@@ -117,7 +117,7 @@ public class PlanCost {
      * Orderby uses sorting 
      **/
     private long getStatistics(OrderBy node) {
-        long noOfTuples = calculateCost(node);
+        long noOfTuples = calculateCost(node.getBase());
         long tuplesize = node.getSchema().getTupleSize();
         long capacity = Math.max(1, Batch.getPageSize() / tuplesize);
         long numPages = (long) Math.ceil(((double) noOfTuples) / (double) capacity);
@@ -177,7 +177,14 @@ public class PlanCost {
 
         switch (joinType) {
             case JoinType.NESTEDJOIN:
-                joincost = leftpages * rightpages;
+                // joincost = leftpages * rightpages;
+                // break;
+            case JoinType.BLOCKNESTED:
+                System.out.println("Calculating BLCOKNEST COST");
+                // long smallOuterTable = Math.min(leftpages, rightpages);
+                // long largerInnerTable = Math.max(leftpages, rightpages);
+                // joincost = smallOuterTable + (long) (Math.ceil(smallOuterTable/(numbuff-2)) * largerInnerTable);
+                joincost = leftpages + (long) (Math.ceil(leftpages/(numbuff-2)) * rightpages);
                 break;
             default:
                 System.out.println("join type is not supported");
