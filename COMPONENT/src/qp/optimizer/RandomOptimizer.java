@@ -56,6 +56,7 @@ public class RandomOptimizer {
                     nj.setNumBuff(numbuff);
                     return nj;
                 case JoinType.SORTMERGE:
+                    System.out.println("Im in SORT MERGE");
                     SortMergeJoin smj = new SortMergeJoin((Join) node);
                     smj.setLeft(left);
                     smj.setRight(right);
