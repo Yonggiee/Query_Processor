@@ -223,6 +223,12 @@ public class RandomOptimizer {
         if (numJMeth > 1) {
             /** find the node that is to be altered **/
             Join node = (Join) findNodeAt(root, joinNum);
+            for (Condition c: node.getConditionList()) {
+                if (c.getOpType() != Condition.EQUAL) {
+                    node.setJoinType(JoinType.BLOCKNESTED);
+                    return root;
+                }
+            }
             int prevJoinMeth = node.getJoinType();
             int joinMeth = RandNumb.randInt(0, numJMeth - 1);
             while (joinMeth == prevJoinMeth) {
