@@ -75,10 +75,16 @@ public class BlockNestedJoin extends Join {
     }
     
     /** select number of tuples per batch **/
-    private void setBatchSize() {
+    private boolean setBatchSize() {
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
         this.leftblock = new LinkedList<>();
+        if (batchsize == 0) {
+            System.out.println(
+                    "Terminating as page size too small for one tuple... At least " + tuplesize + " is required.");
+            return false;
+        }
+        return true;
     }
 
     /** find indices attributes of join conditions **/
@@ -142,7 +148,10 @@ public class BlockNestedJoin extends Join {
      * * Opens the connections
      **/
     public boolean open() {
-        setBatchSize();
+        boolean can = setBatchSize();
+        if (!can) {
+            return false;
+        }
         setIndexAttribute();
         resetCursors();
         return materializeRight() && left.open();
