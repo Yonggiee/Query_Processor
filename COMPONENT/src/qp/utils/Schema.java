@@ -97,7 +97,6 @@ public class Schema implements Serializable {
         for (int i = 0; i < attrlist.size(); ++i) {
             Attribute resAttr = attrlist.get(i);
             int baseIndex = this.indexOf(resAttr.getBaseAttribute());
-            //System.out.println("debugging 3: " + resAttr.getBaseAttribute() + " " + baseIndex + " " + this.attset.get(0).getTabName());
             Attribute baseAttr = (Attribute) this.getAttribute(baseIndex).clone();
             baseAttr.setAggType(resAttr.getAggType());
             newVector.add(baseAttr);

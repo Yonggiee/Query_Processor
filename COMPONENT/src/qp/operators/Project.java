@@ -89,7 +89,6 @@ public class Project extends Operator {
             aggOperator = new Aggregate(base, aggregateAttrs, attrset, attrIndex, tuplesize);
             aggOperator.open();
         }
-        //System.out.println("debugging 6: reaached here");
         return true;
     }
 

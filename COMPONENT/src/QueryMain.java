@@ -171,33 +171,23 @@ public class QueryMain {
         }
 
         /** Print the schema of the result **/
-        //System.out.println("debugging 7: reached querymain");
         Schema schema = root.getSchema();
-        //System.out.println("debugging 8: " + root.getSchema());
         numAtts = schema.getNumCols();
-        //System.out.println("debugging 9: " + numAtts + " " + schema.getAttList());
         printSchema(schema);
-        //System.out.println("debugging 10");
 
         /** Print each tuple in the result **/
         Batch resultbatch;
         while ((resultbatch = root.next()) != null) {
-            // 10b: " + resultbatch.size());
             for (int i = 0; i < resultbatch.size(); ++i) {
                 printTuple(resultbatch.get(i));
             }
         }
-        //System.out.println("debugging 11");
         root.close();
         out.close();
-        //System.out.println("debugging 12");
 
         long endtime = System.currentTimeMillis();
-        //System.out.println("debugging 13");
         double executiontime = (endtime - starttime) / 1000.0;
-        //System.out.println("debugging 14");
         System.out.println("Execution time = " + executiontime);
-        //System.out.println("debugging 15");
         return executiontime;
     }
 
