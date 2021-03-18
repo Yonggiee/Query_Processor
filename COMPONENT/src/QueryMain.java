@@ -28,10 +28,8 @@ public class QueryMain {
         Batch.setPageSize(getPageSize(args, in));
 
         SQLQuery sqlquery = getSQLQuery(args[0]);
-        //System.out.println("debugging abc: " + sqlquery.getProjectList());
         configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrderBy(), sqlquery.getNumAggregate(), args, in);
 
-        //System.out.println("debugging 1: " + sqlquery.getProjectList());
         Operator root = getQueryPlan(sqlquery);
         printFinalPlan(root, args, in);
         executeQuery(root, args[1]);
@@ -184,7 +182,7 @@ public class QueryMain {
         /** Print each tuple in the result **/
         Batch resultbatch;
         while ((resultbatch = root.next()) != null) {
-            //System.out.println("debugging 10b: " + resultbatch.size());
+            // 10b: " + resultbatch.size());
             for (int i = 0; i < resultbatch.size(); ++i) {
                 printTuple(resultbatch.get(i));
             }

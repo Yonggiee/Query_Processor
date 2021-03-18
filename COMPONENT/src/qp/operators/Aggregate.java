@@ -46,13 +46,11 @@ public class Aggregate extends Operator {
                 }
             }
         }
-        //System.out.println("debugging 5: reached here");
         return true;
     }
 
     public Batch next() {
         Batch outbatch = new Batch(batchsize);
-        //System.out.println("debugging 123456789");
         if (outtuples.size() == 0) {
             return null;
         }
@@ -78,7 +76,7 @@ public class Aggregate extends Operator {
             }
             Tuple outtuple = new Tuple(updatedtuple);
             outbatch.add(outtuple);
-            //System.out.println("debugging AA: added +1 " + i + " " + batchsize + " " + outtuples.size() + " " + outbatch.size());
+            // AA: added +1 " + i + " " + batchsize + " " + outtuples.size() + " " + outbatch.size());
         }
         if (outbatch.size() == 0) {
             return null;
