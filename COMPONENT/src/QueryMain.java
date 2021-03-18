@@ -28,7 +28,7 @@ public class QueryMain {
         Batch.setPageSize(getPageSize(args, in));
 
         SQLQuery sqlquery = getSQLQuery(args[0]);
-        configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrderBy(), args, in);
+        configureBufferManager(sqlquery.getNumJoin(), sqlquery.getNumOrderBy(), sqlquery.isDistinct(), args, in);
 
         Operator root = getQueryPlan(sqlquery);
         printFinalPlan(root, args, in);
@@ -89,8 +89,8 @@ public class QueryMain {
      * Minimum of 3 buffers for merging 2 files and one for output.
      * As buffer manager is not implemented, just input the number of buffers available.
      **/
-    private static void configureBufferManager(int numJoin, int numOrderBy, String[] args, BufferedReader in) {
-        if (numJoin != 0 || numOrderBy != 0) {
+    private static void configureBufferManager(int numJoin, int numOrderBy, Boolean isDistinct, String[] args, BufferedReader in) {
+        if (numJoin != 0 || numOrderBy != 0 || isDistinct) {
             int numBuff = 1000;
             if (args.length < 4) {
                 System.out.println("enter the number of buffers available");
@@ -113,6 +113,9 @@ public class QueryMain {
             System.exit(1);
         } else if (numBuff < 3 && numOrderBy > 0) {
             System.out.println("Minimum 3 buffer is required for orderby operator ");
+            System.exit(1);
+        } else if (numBuff < 3 && isDistinct) {
+            System.out.println("Minimum 3 buffer is required for distinct operator ");
             System.exit(1);
         }
     }
