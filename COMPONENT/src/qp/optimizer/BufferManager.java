@@ -14,6 +14,7 @@ public class BufferManager {
     public BufferManager(int numBuffer, int numJoin) {
         this.numBuffer = numBuffer;
         this.numJoin = numJoin;
+        buffPerJoin = numJoin > 0 ? numBuffer / numJoin : 0;
     }
 
     public static void setnumJoin(int numJoin) {
