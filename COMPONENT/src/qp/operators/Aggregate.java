@@ -4,16 +4,23 @@ import java.util.ArrayList;
 import qp.utils.*;
 
 public class Aggregate extends Operator {
-    Operator base;
-    private ArrayList<AggregateAttribute> aggregateAttr;
-    ArrayList<Attribute> attrset;
-    int[] attrIndex;
-    int batchsize;
-    int tuplesize;
-    ArrayList<Tuple> outtuples;
-    private boolean endOfStream;
+    Operator base;                                          //Operator that holds this Aggregate Operator
+    private ArrayList<AggregateAttribute> aggregateAttr;    //list of all aggregate attributes within this query
+    ArrayList<Attribute> attrset;                           //list of all attributes within this query
+    int[] attrIndex;                                        //array containing indexes of attributes within schema
+    int batchsize;                                          //size of Batch object
+    int tuplesize;                                          //size of Tuple object
+    ArrayList<Tuple> outtuples;                             //Holds the tuples to be written out
+    private boolean endOfStream;                            //Designates if there are any more batches to read in
 
-
+    /**
+     * Constructor for the Aggregate operator.
+     * @param base Base operator instance that invokes this Aggregate operator
+     * @param aggregate List of aggregate attributes within query
+     * @param attrset List of all attributes within query
+     * @param attrIndex Contains indexes of attributes within schema
+     * @param tuplesize Size of a tuple.
+     */
     public Aggregate(Operator base, ArrayList<AggregateAttribute> aggregate, ArrayList<Attribute> attrset, int[] attrIndex, int tuplesize) {
         super(OpType.AGGREGATE);
         this.base = base;
@@ -26,6 +33,9 @@ public class Aggregate extends Operator {
 
     }
 
+    /**
+     * Opens up a stream to read in tuples in batches, and compute aggregate values for aggregate attributes
+     */
     public boolean open() {
         batchsize = Batch.getPageSize() / tuplesize;
         while (!endOfStream) {
@@ -49,6 +59,10 @@ public class Aggregate extends Operator {
         return true;
     }
 
+    /**
+     * Reads in batch of tuples, outputs batch of tuples with attributes that require aggregation
+     * @return A Batch containing the resultant tuples written out (including aggregate attributes)
+     */
     public Batch next() {
         Batch outbatch = new Batch(batchsize);
         if (outtuples.size() == 0) {
