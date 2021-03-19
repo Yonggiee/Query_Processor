@@ -60,7 +60,7 @@ public class SortMergeJoin extends Join{
         if (batchsize == 0) {
             System.out.println(
                     "Terminating as page size too small for one tuple... At least " + tuplesize + " is required.");
-            return false;
+            System.exit(1);
         }
 
         bufferedTuples = new ArrayList<>();
@@ -106,7 +106,12 @@ public class SortMergeJoin extends Join{
     public Batch next() {
         Batch outbatch = new Batch(batchsize);
         int added = 0;
-        int tuplesPerSide = batchsize * (numBuff - 1) / 2;
+        int tuplesPerSide = batchsize * (numBuff - 2) / 2;
+
+        if (tuplesPerSide == 0) {
+            System.out.println("Number of buffers too little for SortMergeJoin");
+            System.exit(1);
+        }
 
         if (rightSideTuples == null) {
             rightSideTuples = fillTuple(tuplesPerSide, rightSortedFile, 2);

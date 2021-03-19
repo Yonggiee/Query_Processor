@@ -167,6 +167,7 @@ public class RandomInitialPlan {
             bitCList.set(jnnum);
         }
 
+        int addedJoin = 0;
         if (cartesianTable.size() > 0) {
             Operator left;
             int i = 0;
@@ -189,7 +190,14 @@ public class RandomInitialPlan {
                 jn.setJoinType(joinMeth);
                 modifyHashtable(left, jn);
                 modifyHashtable(right, jn);
+                addedJoin += 1;
             }
+        }
+        BufferManager.setnumJoin(numJoin + addedJoin);
+        int numBuffPerJoin = BufferManager.getBuffersPerJoin();
+        if (numJoin + addedJoin > 0 && numBuffPerJoin < 3) {
+            System.out.println("Minimum 3 buffers are required per join operator ");
+            System.exit(1);
         }
         /** The last join operation is the root for the
          ** constructed till now

@@ -50,7 +50,7 @@ public class NestedJoin extends Join {
         if (batchsize == 0) {
             System.out.println(
                     "Terminating as page size too small for one tuple... At least " + tuplesize + " is required.");
-            return false;
+            System.exit(1);
         }
 
         /** find indices attributes of join conditions **/
