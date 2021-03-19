@@ -8,6 +8,7 @@ import qp.utils.Attribute;
 import qp.utils.Batch;
 import qp.utils.Schema;
 import qp.utils.Tuple;
+import qp.utils.AggregateAttribute;
 
 import java.util.ArrayList;
 
@@ -29,6 +30,10 @@ public class Project extends Operator {
      * * that are to be projected
      **/
     int[] attrIndex;
+
+    ArrayList<AggregateAttribute> aggregateAttrs = new ArrayList<AggregateAttribute>(); //Set of attributes to perform aggregation on
+    Operator aggOperator;
+    boolean aggregateIsPresent;
 
     public Project(Operator base, ArrayList<Attribute> as, int type) {
         super(type);
@@ -71,16 +76,23 @@ public class Project extends Operator {
          **/
         Schema baseSchema = base.getSchema();
         attrIndex = new int[attrset.size()];
+        aggregateIsPresent = false;
+
         for (int i = 0; i < attrset.size(); ++i) {
             Attribute attr = attrset.get(i);
-
-            if (attr.getAggType() != Attribute.NONE) {
-                System.err.println("Aggragation is not implemented.");
-                System.exit(1);
-            }
-
             int index = baseSchema.indexOf(attr.getBaseAttribute());
             attrIndex[i] = index;
+
+            if (attr.getAggType() != Attribute.NONE) {
+                aggregateIsPresent = true;
+                AggregateAttribute newAggIndex = new AggregateAttribute(index, attr.getAggType());
+                aggregateAttrs.add(newAggIndex);
+            }
+        }
+
+        if(aggregateIsPresent) {
+            aggOperator = new Aggregate(base, aggregateAttrs, attrset, attrIndex, tuplesize);
+            aggOperator.open();
         }
         return true;
     }
@@ -90,8 +102,13 @@ public class Project extends Operator {
      */
     public Batch next() {
         outbatch = new Batch(batchsize);
-        /** all the tuples in the inbuffer goes to the output buffer **/
-        inbatch = base.next();
+        Tuple prevtuple = null;
+
+        if(aggregateIsPresent) {
+            inbatch = aggOperator.next();
+        } else {
+            inbatch = base.next();
+        }
 
         if (inbatch == null) {
             return null;
@@ -101,13 +118,35 @@ public class Project extends Operator {
             Tuple basetuple = inbatch.get(i);
             //Debug.PPrint(basetuple);
             //System.out.println();
-            ArrayList<Object> present = new ArrayList<>();
+            boolean hasAggregate = false;
+            ArrayList<Object> updatedtuple = new ArrayList<>();
             for (int j = 0; j < attrset.size(); j++) {
-                Object data = basetuple.dataAt(attrIndex[j]);
-                present.add(data);
+                if (attrset.get(j).getAggType() == Attribute.NONE) {
+                    Object data = basetuple.dataAt(attrIndex[j]);
+                    updatedtuple.add(data);
+                } else {
+                    hasAggregate = true;
+                    int count = 0;
+                    for (AggregateAttribute aAttr : aggregateAttrs) {
+                        count += 1;
+                        if (aAttr.getAttrIndex() == attrIndex[j] && aAttr.getAggregateType() == attrset.get(j).getAggType()) {
+                            Object data = basetuple.dataAt(base.getSchema().getNumCols()+count-1);
+                            updatedtuple.add(data);
+                            break;
+                        }
+                    }
+                }
             }
-            Tuple outtuple = new Tuple(present);
-            outbatch.add(outtuple);
+            
+            Tuple outtuple = new Tuple(updatedtuple);
+            if(hasAggregate && prevtuple == null){
+                outbatch.add(outtuple);
+                prevtuple = outtuple;
+
+            } else if(!hasAggregate) {
+                outbatch.add(outtuple);
+                prevtuple = outtuple;
+            }
         }
         return outbatch;
     }
@@ -131,5 +170,15 @@ public class Project extends Operator {
         newproj.setSchema(newSchema);
         return newproj;
     }
-
+/*
+    private boolean checkDuplicate(Tuple previoustuple, Tuple currenttuple) {
+        //Compare every attribute of the tuples to check for duplicate
+        for(int i=0; i<currenttuple.data().size(); i++){
+            if(Tuple.compareTuples(previoustuple, currenttuple, i)!=0) {
+                return true;
+            }
+        }
+        return false;
+    }
+    */
 }

@@ -94,7 +94,7 @@ public class PlanCost {
      * number of passes same as orderby operator.
      **/
     private long getStatistics(Distinct node) {
-        long noOfTuples = calculateCost(node);
+        long noOfTuples = calculateCost(node.getBase());
         long tuplesize = node.getSchema().getTupleSize();
         long capacity = Math.max(1, Batch.getPageSize() / tuplesize);
         long numPages = (long) Math.ceil(((double) noOfTuples) / (double) capacity);
@@ -188,7 +188,9 @@ public class PlanCost {
                 break;
             case JoinType.SORTMERGE:
                 System.out.println("Calculating SORTMERGE COST");
-                joincost = leftpages + (long) (Math.ceil(leftpages/(numbuff-2)) * rightpages);
+                int leftNumPasses = 1 + (int) Math.ceil(Math.log(Math.ceil(leftpages / (1.0 * numbuff))) / Math.log(leftpages - 1));
+                int rightNumPasses = 1 + (int) Math.ceil(Math.log(Math.ceil(rightpages / (1.0 * numbuff))) / Math.log(rightpages - 1));
+                joincost = leftNumPasses * leftpages * 2 + rightNumPasses * rightpages * 2 + leftpages + rightpages;
                 break;
             default:
                 System.out.println("join type is not supported");

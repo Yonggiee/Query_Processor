@@ -211,7 +211,7 @@ public class RandomInitialPlan {
         /** The last join operation is the root for the
          ** constructed till now
          **/
-        if (numJoin != 0 || cartesianTable.size() > 0) {
+        if (numJoin != 0 || (numJoin == 0 && cartesianTable.size() > 1)) {
             root = jn;
         } 
     }

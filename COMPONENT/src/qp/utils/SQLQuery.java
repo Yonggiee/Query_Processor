@@ -121,6 +121,17 @@ public class SQLQuery {
         return orderbyList; 
     }
 
+    public ArrayList<Attribute> getAggregateList() {
+        ArrayList<Attribute> resultAggList = new ArrayList<>();
+        ArrayList<Attribute> projList = this.getProjectList();
+        for (Attribute attr : projList) {
+            if (attr.getAggType() != Attribute.NONE) {
+                resultAggList.add(attr);
+            }
+        }
+        return resultAggList;
+    }
+
     public int getNumOrderBy() {
         if (orderbyList == null)
             return 0;
@@ -131,5 +142,11 @@ public class SQLQuery {
         if (joinList == null)
             return 0;
         return joinList.size();
+    }
+
+    public int getNumAggregate() {
+        if (this.getAggregateList() == null)
+            return 0;
+        return this.getAggregateList().size();
     }
 }
