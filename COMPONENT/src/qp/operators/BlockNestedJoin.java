@@ -195,7 +195,6 @@ public class BlockNestedJoin extends Join {
                             Tuple lefttuple = leftTuples.get(i);
                             Tuple righttuple = rightbatch.get(j);
                             if (isCartesian || lefttuple.checkJoin(righttuple, leftindex, rightindex, exprindex)) {
-                            // if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
                                 Tuple outtuple = lefttuple.joinWith(righttuple);
                                 outbatch.add(outtuple);
                                 if (outbatch.isFull()) {
