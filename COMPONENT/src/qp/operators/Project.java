@@ -1,5 +1,5 @@
 /**
- * To projec out the required attributes from the result
+ * To project out the required attributes from the result
  **/
 
 package qp.operators;
@@ -55,9 +55,8 @@ public class Project extends Operator {
 
 
     /**
-     * Opens the connection to the base operator
-     * * Also figures out what are the columns to be
-     * * projected from the base operator
+     * Opens the connection to the base operator.
+     * Also figures out what are the columns to be projected from the base operator
      **/
     public boolean open() {
         /** set number of tuples per batch **/
@@ -78,6 +77,7 @@ public class Project extends Operator {
         attrIndex = new int[attrset.size()];
         aggregateIsPresent = false;
 
+        /* this loop checks if the required columns require aggregation (via getAggType)) */
         for (int i = 0; i < attrset.size(); ++i) {
             Attribute attr = attrset.get(i);
             int index = baseSchema.indexOf(attr.getBaseAttribute());
@@ -113,7 +113,7 @@ public class Project extends Operator {
         if (inbatch == null) {
             return null;
         }
-
+        /* this loop reads in a tuple, and writes out updated tuple with the aggregated attributes */
         for (int i = 0; i < inbatch.size(); i++) {
             Tuple basetuple = inbatch.get(i);
             //Debug.PPrint(basetuple);
@@ -170,15 +170,5 @@ public class Project extends Operator {
         newproj.setSchema(newSchema);
         return newproj;
     }
-/*
-    private boolean checkDuplicate(Tuple previoustuple, Tuple currenttuple) {
-        //Compare every attribute of the tuples to check for duplicate
-        for(int i=0; i<currenttuple.data().size(); i++){
-            if(Tuple.compareTuples(previoustuple, currenttuple, i)!=0) {
-                return true;
-            }
-        }
-        return false;
-    }
-    */
+
 }

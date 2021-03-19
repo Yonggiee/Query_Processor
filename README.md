@@ -16,8 +16,11 @@ Based on the project requirements, we have implemented the following operators i
 - `DISTINCT` operator (see [Distinct.java](src/qp/operators/Distinct.java))
 - `GROUPBY` operator (see [GroupBy.java](src/qp/operators/GroupBy.java))
 - `ORDERBY` operator (see [OrderBy.java](src/qp/operators/OrderBy.java))
+- Aggregate operations: `MIN`, `MAX`, `COUNT` and `AVG` operators (see [Aggregate.java](src/qp/operators/Aggregate.java) and [AggregateAttribute.java](src/qp/operators/AggregateAttribute.java))
+
 ### BlockNestedJoin
 The BlockNestedJoin operator uses |B|-2 buffers to store as many pages of tuples of the left relation as possible. It uses another 1 buffer for a single page of the right relation and another 1 buffer for output. In total, it uses |B| buffers available. It reads the left relation pages into a LinkedList of pages. Then, it flattens all the tuples across these pages into an ArrayList for comparison with the single right page currently loaded in for comparison. While the output buffer is not full, we compare the flattened list of left tuples with all |S| pages of the right relation S. When |S| has been exhausted, we load in the next block of left pages following the aforementioned algorithm and repeat. Every time the output buffer page is full, we return it in the `.next()` function, and also store the current pointers for both the left and right pointers for the tuples, so that the algorithm can continue where it left off when `.next()` is called again for the next output page.
+
 ### Sort
 A Sort utility class was created. The Sort class is used by SortMergeJoin, Distinct and Orderby Operators. It is the implementation of external sorting. In the first pass, the buffers would be used to create sorted runs. We used the OrderBy comparator to order the tuples. Each sorted run is written into a Java temporary file and would be deleted at the end of the program. We have used Java ObjectOutputStream to write the tuples in the files. Then, the sorted runs will be continuously merged until only one sorted run is left. The number of sorted runs that can be merged at any one time is number of |B| – 1 as one is used for output. We use maintain a sorted array of |B|– 1 size to know which tuple should be chosen to place into the output buffer and another tuple from the same sorted run will be added to the sorted array. For simplicity, we just returned the Java ObjectInputStream of the entire sorted table instead of return by batches. 
 
@@ -32,3 +35,9 @@ The OrderBy operator also uses the Sort utility class. It creates a Sort instanc
 
 ### Cartesian
 Cartesian is done by adding a special comparison type in the Condition class. This will create a special Join operator which will accept all tuples that are formed by doing a cartesian product between the left table and right table. To check if there are any cartesian to be done, we check if there are any tables that are not present the Join conditions and create the special cartesian Join operator. Any Join operator like BlockNestJoin, SortMergeJoin and NestedJoin with the special is cartesian set will accept all the tuples.
+
+### Aggregate
+The Aggregate operator works mainly within [Project.java](src/qp/operators/Project.java). If the Project operator detects any required columns contain an aggregate operation (using `Attribute.getAggType()` method), the Aggregate operator reads in the tuples, calculates the required aggregate value for each tuple and appends these columns to the original tuple to be written out.
+
+### AggregateAttribute
+A AggregateAttribute utility class was created. This class is used exclusively by the Aggregate operator. It implements the various required aggregation operations for `MIN`, `MAX`, `COUNT` and `AVG` for each aggregate attribute. This helps the Aggregate operator to calculate the aggregate value, if any, for the necessary attributes in each tuple.

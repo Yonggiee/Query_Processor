@@ -121,6 +121,10 @@ public class SQLQuery {
         return orderbyList; 
     }
 
+    /**
+     * Iterates through the list of projected attributes, checks which attributes need to be aggregated (using getAggType())
+     * @return resultAggList: An ArrayList of attributes that require aggregation
+     */
     public ArrayList<Attribute> getAggregateList() {
         ArrayList<Attribute> resultAggList = new ArrayList<>();
         ArrayList<Attribute> projList = this.getProjectList();
@@ -144,6 +148,10 @@ public class SQLQuery {
         return joinList.size();
     }
 
+    /**
+     * Get the number of Aggregate attributes in the projection
+     * @return An integer representing the number of aggregate attributes in the query.
+     */
     public int getNumAggregate() {
         if (this.getAggregateList() == null)
             return 0;

@@ -1,14 +1,22 @@
 package qp.utils;
 
+/**
+ * Class for aggregate attributes.
+ * Contains the different aggregation operation types (MIN, MAX, COUNT, AVG) as well as the associated operation for each aggregation type and data object type 
+ * <b>Note: for this project we only look at Integer and String objects.</b>
+ */
 public class AggregateAttribute {
 
-    private int attrIndex;
-    private int aggregateType;
-    private Object aggregateVal;
-    private int sum;
-    private int count;
-    private int aggregateValDataType;
+    private int attrIndex;              //index of aggregated column in data
+    private int aggregateType;          //the type of aggregate operation for this aggregated attribute (MIN, MAX, COUNT, AVG)
+    private Object aggregateVal;        //the value of the aggregated data
+    private int totalSum;               //used for calculating AVG (ie the numerator)
+    private int totalCount;             //used for calculating AVG (ie the denominator)
+    private int aggregateValDataType;   //the data type of the column data to be aggregated (either Integer or String)
 
+    /**
+     * Construct the aggregate attribute and initialise the aggregateVal value according to the relevant aggregate operation
+     */
     public AggregateAttribute(int attrIndex, int aggregateType) {
         this.attrIndex = attrIndex;
         this.aggregateType = aggregateType;
@@ -25,12 +33,15 @@ public class AggregateAttribute {
             break;
             case Attribute.AVG:
                 aggregateVal = 0;
-                sum = 0;
-                count = 0;
+                totalSum = 0;
+                totalCount = 0;
             break;
         }
     }
 
+    /**
+     * Obtain the aggregate value for this attribute, according to operation type and data type
+     */
     public void setAggregateVal(Tuple intuple){
         Object val = intuple.dataAt(attrIndex);
         if (val instanceof Integer) {
@@ -41,6 +52,7 @@ public class AggregateAttribute {
             return;
         }
 
+        /* if attribute is Integer */
         if (aggregateValDataType == 1) {
             switch (aggregateType) {
                 case Attribute.MIN:
@@ -57,12 +69,14 @@ public class AggregateAttribute {
                     aggregateVal = (int) aggregateVal + 1; 
                 break;
                 case Attribute.AVG:
-                    sum = sum + (int)val;
-                    count += 1;
-                    aggregateVal = sum / count;
+                    totalSum = totalSum + (int)val;
+                    totalCount += 1;
+                    aggregateVal = totalSum / totalCount;
                 break;
             }
         }
+
+        /* if attribute is String */
         if (aggregateValDataType == 2) {
             String valString = (String) val;
             switch (aggregateType) {

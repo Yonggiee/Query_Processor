@@ -158,13 +158,30 @@ public class RandomInitialPlan {
             Schema newsche = left.getSchema().joinWith(right.getSchema());
             jn.setSchema(newsche);
 
-            /** randomly select a join type**/
-            int numJMeth = JoinType.numJoinTypes();
-            int joinMeth = RandNumb.randInt(0, numJMeth - 1);
-            jn.setJoinType(joinMeth);
-            modifyHashtable(left, jn);
-            modifyHashtable(right, jn);
-            bitCList.set(jnnum);
+            /** randomly select a join type if it is not inequality condition**/
+            int joinMeth;
+            if (cn.getExprType() != Condition.EQUAL) {
+                joinMeth = 1;
+                jn.setJoinType(joinMeth);
+                modifyHashtable(left, jn);
+                modifyHashtable(right, jn);
+                bitCList.set(jnnum);
+                // break;
+            } else {
+                int numJMeth = JoinType.numJoinTypes();
+                joinMeth = RandNumb.randInt(0, numJMeth - 1);
+                jn.setJoinType(joinMeth);
+                modifyHashtable(left, jn);
+                modifyHashtable(right, jn);
+                bitCList.set(jnnum);
+            }
+            // System.out.println("I'm cn: "+cn.getExprType());
+            // int numJMeth = JoinType.numJoinTypes();
+            // int joinMeth = RandNumb.randInt(0, numJMeth - 1);
+            // jn.setJoinType(joinMeth);
+            // modifyHashtable(left, jn);
+            // modifyHashtable(right, jn);
+            // bitCList.set(jnnum);
         }
 
         int addedJoin = 0;
