@@ -26,6 +26,7 @@ public class BlockNestedJoin extends Join {
     List<Batch> leftblock = new LinkedList<>();          // Left Block that contains M-2 buffer pages
     ArrayList<Tuple> leftTuples = new ArrayList<>();    // Flattened list of tuples (entire left block)
     ObjectInputStream in;           // File pointer to the right hand materialized file
+    Boolean isCartesian;            // Check if this is for cartesian
 
     int lcurs;                      // Cursor for left side buffer
     int rcurs;                      // Cursor for right side buffer
@@ -92,13 +93,18 @@ public class BlockNestedJoin extends Join {
         leftindex = new ArrayList<>();
         rightindex = new ArrayList<>();
         exprindex = new ArrayList<>();
-        for (Condition con : conditionList) {
-            Attribute leftattr = con.getLhs();
-            Attribute rightattr = (Attribute) con.getRhs();
-            int compareType = con.getExprType();
-            leftindex.add(left.getSchema().indexOf(leftattr));
-            rightindex.add(right.getSchema().indexOf(rightattr));
-            exprindex.add(compareType);
+        if (conditionList.size() == 0) {
+            isCartesian = true;
+        } else {
+            isCartesian = false;
+            for (Condition con : conditionList) {
+                Attribute leftattr = con.getLhs();
+                Attribute rightattr = (Attribute) con.getRhs();
+                int compareType = con.getExprType();
+                leftindex.add(left.getSchema().indexOf(leftattr));
+                rightindex.add(right.getSchema().indexOf(rightattr));
+                exprindex.add(compareType);
+            }
         }
     }
     
@@ -188,7 +194,7 @@ public class BlockNestedJoin extends Join {
                         for (j = rcurs; j < rightbatch.size(); j++) {
                             Tuple lefttuple = leftTuples.get(i);
                             Tuple righttuple = rightbatch.get(j);
-                            if (lefttuple.checkJoin(righttuple, leftindex, rightindex, exprindex)) {
+                            if (isCartesian || lefttuple.checkJoin(righttuple, leftindex, rightindex, exprindex)) {
                             // if (lefttuple.checkJoin(righttuple, leftindex, rightindex)) {
                                 Tuple outtuple = lefttuple.joinWith(righttuple);
                                 outbatch.add(outtuple);
